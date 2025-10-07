@@ -1,0 +1,75 @@
+package opts
+
+// Options holds a typed options value and evaluator configuration.
+type Options[T any] struct {
+	Value T
+
+	cfg optionsConfig
+}
+
+// Response stores a typed result produced by an evaluator.
+type Response[T any] struct {
+	Value T
+}
+
+// RuleContext carries inputs needed when evaluating an expression.
+type RuleContext struct {
+	Snapshot any
+}
+
+// Evaluator executes expressions against a rule context.
+type Evaluator interface {
+	Evaluate(ctx RuleContext, expr string) (any, error)
+	Compile(expr string, opts ...CompileOption) (CompiledRule, error)
+}
+
+// CompiledRule represents a reusable expression program.
+type CompiledRule interface {
+	Evaluate(ctx RuleContext) (any, error)
+}
+
+// CompileOption configures evaluator compile behaviour.
+type CompileOption interface {
+	applyCompileOption(*compileConfig)
+}
+
+type compileConfig struct{}
+
+type compileOptionFunc func(*compileConfig)
+
+func (f compileOptionFunc) applyCompileOption(cfg *compileConfig) {
+	if f != nil {
+		f(cfg)
+	}
+}
+
+type Option func(*optionsConfig)
+
+type optionsConfig struct {
+	evaluator Evaluator
+}
+
+func applyOptions(opts []Option) optionsConfig {
+	cfg := optionsConfig{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&cfg)
+		}
+	}
+	return cfg
+}
+
+func (o *Options[T]) evaluator() Evaluator {
+	return o.cfg.evaluator
+}
+
+func (o *Options[T]) withEvaluator(e Evaluator) {
+	o.cfg.evaluator = e
+}
+
+func (o *Options[T]) evaluatorOrDefault(defaultEvaluator Evaluator) Evaluator {
+	if o.cfg.evaluator != nil {
+		return o.cfg.evaluator
+	}
+	return defaultEvaluator
+}
