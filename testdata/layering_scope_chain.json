@@ -1,0 +1,44 @@
+{
+  "description": "Scope layering sequences for CMS-backed settings",
+  "cases": [
+    {
+      "name": "user scope resolves to user > group > global",
+      "key": "notifications",
+      "input": [
+        { "level": "global" },
+        { "level": "group", "group": "group-7" },
+        { "level": "user", "user": "user-42", "group": "group-7" }
+      ],
+      "expect": [
+        { "level": "user", "user": "user-42", "group": "group-7" },
+        { "level": "group", "group": "group-7" },
+        { "level": "global" }
+      ]
+    },
+    {
+      "name": "group scope resolves to group > global",
+      "key": "features",
+      "input": [
+        { "level": "group", "group": "group-2" },
+        { "level": "global" },
+        { "level": "group", "group": "group-2" }
+      ],
+      "expect": [
+        { "level": "group", "group": "group-2" },
+        { "level": "global" }
+      ]
+    },
+    {
+      "name": "global scope remains single layer",
+      "key": "billing",
+      "input": [
+        { "level": "global" },
+        { "level": "global" },
+        { "level": "unknown" }
+      ],
+      "expect": [
+        { "level": "global" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "description": "Layer precedence scenarios validating MergeLayers contract",
+  "cases": [
+    {
+      "name": "strongest overrides weaker while preserving explicit zeros",
+      "layers": [
+        {
+          "scope": "user",
+          "snapshot": {
+            "enabled": false,
+            "limits": {
+              "max": 0
+            },
+            "channel": {
+              "enabled": false
+            },
+            "tags": [],
+            "threshold": null
+          }
+        },
+        {
+          "scope": "group",
+          "snapshot": {
+            "enabled": true,
+            "limits": {
+              "max": 10,
+              "min": 1
+            },
+            "channel": {
+              "enabled": true,
+              "volume": 5
+            },
+            "tags": [
+              "group"
+            ],
+            "threshold": 5
+          }
+        },
+        {
+          "scope": "global",
+          "snapshot": {
+            "enabled": true,
+            "limits": {
+              "max": 20,
+              "min": 5,
+              "bonus": 9
+            },
+            "channel": {
+              "enabled": true,
+              "volume": 3
+            },
+            "tags": [
+              "global"
+            ],
+            "threshold": 10
+          }
+        }
+      ],
+      "expect": {
+        "enabled": false,
+        "limits": {
+          "bonus": 9,
+          "max": 0,
+          "min": 1
+        },
+        "channel": {
+          "enabled": false,
+          "volume": 5
+        },
+        "tags": [],
+        "threshold": 5
+      }
+    },
+    {
+      "name": "weaker layers fill gaps when stronger omits fields",
+      "layers": [
+        {
+          "scope": "group",
+          "snapshot": {
+            "limits": {
+              "max": 7
+            },
+            "channel": {
+              "volume": 8
+            }
+          }
+        },
+        {
+          "scope": "global",
+          "snapshot": {
+            "enabled": true,
+            "limits": {
+              "max": 9,
+              "min": 2
+            },
+            "channel": {
+              "enabled": true,
+              "volume": 3
+            },
+            "tags": [
+              "global",
+              "baseline"
+            ],
+            "threshold": 12
+          }
+        }
+      ],
+      "expect": {
+        "enabled": true,
+        "limits": {
+          "max": 7,
+          "min": 2
+        },
+        "channel": {
+          "enabled": true,
+          "volume": 8
+        },
+        "tags": [
+          "global",
+          "baseline"
+        ],
+        "threshold": 12
+      }
+    }
+  ]
+}
