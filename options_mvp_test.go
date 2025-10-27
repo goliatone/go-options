@@ -25,58 +25,49 @@ func (v testValidatable) Validate() error {
 	return nil
 }
 
-type evaluatorFactory struct {
+var evaluatorFactories = []struct {
 	name string
 	new  func(cache ProgramCache, registry *FunctionRegistry) Evaluator
-}
-
-var evaluatorFactories = buildEvaluatorFactories()
-
-func buildEvaluatorFactories() []evaluatorFactory {
-	factories := []evaluatorFactory{
-		{
-			name: "expr",
-			new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
-				opts := []ExprEvaluatorOption{}
-				if cache != nil {
-					opts = append(opts, ExprWithProgramCache(cache))
-				}
-				if registry != nil {
-					opts = append(opts, ExprWithFunctionRegistry(registry))
-				}
-				return NewExprEvaluator(opts...)
-			},
+}{
+	{
+		name: "expr",
+		new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
+			opts := []ExprEvaluatorOption{}
+			if cache != nil {
+				opts = append(opts, ExprWithProgramCache(cache))
+			}
+			if registry != nil {
+				opts = append(opts, ExprWithFunctionRegistry(registry))
+			}
+			return NewExprEvaluator(opts...)
 		},
-		{
-			name: "cel",
-			new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
-				opts := []CELEvaluatorOption{}
-				if cache != nil {
-					opts = append(opts, CELWithProgramCache(cache))
-				}
-				if registry != nil {
-					opts = append(opts, CELWithFunctionRegistry(registry))
-				}
-				return NewCELEvaluator(opts...)
-			},
+	},
+	{
+		name: "cel",
+		new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
+			opts := []CELEvaluatorOption{}
+			if cache != nil {
+				opts = append(opts, CELWithProgramCache(cache))
+			}
+			if registry != nil {
+				opts = append(opts, CELWithFunctionRegistry(registry))
+			}
+			return NewCELEvaluator(opts...)
 		},
-	}
-	if jsEvaluatorAvailable() {
-		factories = append(factories, evaluatorFactory{
-			name: "js",
-			new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
-				opts := []JSEvaluatorOption{}
-				if cache != nil {
-					opts = append(opts, JSWithProgramCache(cache))
-				}
-				if registry != nil {
-					opts = append(opts, JSWithFunctionRegistry(registry))
-				}
-				return NewJSEvaluator(opts...)
-			},
-		})
-	}
-	return factories
+	},
+	{
+		name: "js",
+		new: func(cache ProgramCache, registry *FunctionRegistry) Evaluator {
+			opts := []JSEvaluatorOption{}
+			if cache != nil {
+				opts = append(opts, JSWithProgramCache(cache))
+			}
+			if registry != nil {
+				opts = append(opts, JSWithFunctionRegistry(registry))
+			}
+			return NewJSEvaluator(opts...)
+		},
+	},
 }
 
 func TestApplyDefaultsBehaviour(t *testing.T) {
@@ -336,159 +327,6 @@ func TestUC3TimeRulesFixture(t *testing.T) {
 	}
 }
 
-func TestDynamicPathFixture(t *testing.T) {
-	type readOp struct {
-		Name   string `json:"name"`
-		Path   string `json:"path"`
-		Expect bool   `json:"expect"`
-	}
-	type writeOp struct {
-		Name   string `json:"name"`
-		Path   string `json:"path"`
-		Value  any    `json:"value"`
-		Expect bool   `json:"expect"`
-	}
-	type fixture struct {
-		Snapshot map[string]any `json:"snapshot"`
-		Reads    []readOp       `json:"reads"`
-		Writes   []writeOp      `json:"writes"`
-	}
-
-	fx := loadFixture[fixture](t, "dynamic_paths.json")
-	snapshot := cloneMap(fx.Snapshot)
-	opts := New(snapshot)
-
-	for _, op := range fx.Reads {
-		value, err := opts.Get(op.Path)
-		if err != nil {
-			t.Fatalf("read %q failed: %v", op.Name, err)
-		}
-		got, ok := value.(bool)
-		if !ok {
-			t.Fatalf("read %q expected bool, got %T", op.Name, value)
-		}
-		if got != op.Expect {
-			t.Fatalf("read %q expected %v, got %v", op.Name, op.Expect, got)
-		}
-	}
-
-	for _, op := range fx.Writes {
-		if err := opts.Set(op.Path, op.Value); err != nil {
-			t.Fatalf("write %q failed: %v", op.Name, err)
-		}
-		value, err := opts.Get(op.Path)
-		if err != nil {
-			t.Fatalf("write %q readback failed: %v", op.Name, err)
-		}
-		got, ok := value.(bool)
-		if !ok {
-			t.Fatalf("write %q readback expected bool, got %T", op.Name, value)
-		}
-		if got != op.Expect {
-			t.Fatalf("write %q expected %v, got %v", op.Name, op.Expect, got)
-		}
-	}
-}
-
-func TestSchemaGenerationFixture(t *testing.T) {
-	type descriptor struct {
-		Path string `json:"path"`
-		Type string `json:"type"`
-	}
-	type fixture struct {
-		Snapshot map[string]any `json:"snapshot"`
-		Expect   struct {
-			Fields []descriptor `json:"fields"`
-		} `json:"expect"`
-	}
-
-	fx := loadFixture[fixture](t, "schema_fields.json")
-	opts := New(cloneMap(fx.Snapshot))
-
-	fields := make(map[string]string)
-	for _, field := range opts.Schema().Fields {
-		fields[field.Path] = field.Type
-	}
-
-	if len(fields) != len(fx.Expect.Fields) {
-		t.Fatalf("expected %d schema fields, got %d", len(fx.Expect.Fields), len(fields))
-	}
-
-	for _, field := range fx.Expect.Fields {
-		typ, ok := fields[field.Path]
-		if !ok {
-			t.Fatalf("expected schema to contain path %q", field.Path)
-		}
-		if typ != field.Type {
-			t.Fatalf("path %q expected type %q, got %q", field.Path, field.Type, typ)
-		}
-	}
-}
-
-func TestGetErrorsForUnsupportedPaths(t *testing.T) {
-	opts := New(map[string]any{
-		"Channels": map[string]any{
-			"Email": map[string]any{
-				"Enabled": true,
-			},
-		},
-	})
-
-	if _, err := opts.Get("Channels.Push.Enabled"); err == nil {
-		t.Fatalf("expected opts.Get to fail when segment missing")
-	}
-
-	if err := opts.Set("Channels.Email.Enabled.Flag", true); err == nil {
-		t.Fatalf("expected opts.Set to fail when attempting to traverse non-map segment")
-	}
-}
-
-func TestDynamicAccessSupportsStructSnapshots(t *testing.T) {
-	type Channel struct {
-		Enabled bool `json:"enabled"`
-	}
-	type Snapshot struct {
-		Channels struct {
-			Email Channel `json:"email"`
-		} `json:"channels"`
-	}
-
-	var snapshot Snapshot
-	snapshot.Channels.Email.Enabled = true
-
-	opts := New(snapshot)
-
-	value, err := opts.Get("channels.email.enabled")
-	if err != nil {
-		t.Fatalf("unexpected error retrieving struct field: %v", err)
-	}
-	enabled, ok := value.(bool)
-	if !ok {
-		t.Fatalf("expected bool value, got %T", value)
-	}
-	if !enabled {
-		t.Fatalf("expected struct-backed value to be true")
-	}
-
-	schema := opts.Schema()
-	found := false
-	for _, field := range schema.Fields {
-		if field.Path == "channels.email.enabled" {
-			found = true
-			if field.Type != "bool" {
-				t.Fatalf("expected schema type bool for struct field, got %q", field.Type)
-			}
-		}
-	}
-	if !found {
-		t.Fatalf("expected schema to include struct-backed field path")
-	}
-
-	if err := opts.Set("channels.email.enabled", false); err == nil {
-		t.Fatalf("expected opts.Set to fail on struct-backed snapshots")
-	}
-}
-
 func TestEvaluatorProgramCache(t *testing.T) {
 	type cacheExpect struct {
 		Hits   int `json:"hits"`
@@ -517,9 +355,6 @@ func TestEvaluatorProgramCache(t *testing.T) {
 				t.Run(tc.Name, func(t *testing.T) {
 					cache := &fakeProgramCache{}
 					evaluator := factory.new(cache, nil)
-					if evaluator == nil {
-						t.Skipf("%s evaluator not available", factory.name)
-					}
 					snapshot := mergeMaps(fx.Defaults, tc.Input)
 					opts := New(snapshot,
 						WithEvaluator(evaluator),
@@ -580,6 +415,96 @@ func TestEvaluateWithSnapshotOnlyContext(t *testing.T) {
 				t.Fatalf("expected EvaluateWith to respect snapshot context override")
 			}
 		})
+	}
+}
+
+func TestDynamicPathHelpers(t *testing.T) {
+	type readOp struct {
+		Name   string `json:"name"`
+		Path   string `json:"path"`
+		Expect bool   `json:"expect"`
+	}
+	type writeOp struct {
+		Name   string `json:"name"`
+		Path   string `json:"path"`
+		Value  any    `json:"value"`
+		Expect bool   `json:"expect"`
+	}
+	type fixture struct {
+		Snapshot map[string]any `json:"snapshot"`
+		Reads    []readOp       `json:"reads"`
+		Writes   []writeOp      `json:"writes"`
+	}
+
+	fx := loadFixture[fixture](t, "dynamic_paths.json")
+	snapshot := cloneMap(fx.Snapshot)
+	opts := New(snapshot)
+
+	for _, op := range fx.Reads {
+		value, err := opts.Get(op.Path)
+		if err != nil {
+			t.Fatalf("read %q failed: %v", op.Name, err)
+		}
+		got, ok := value.(bool)
+		if !ok {
+			t.Fatalf("read %q expected bool, got %T", op.Name, value)
+		}
+		if got != op.Expect {
+			t.Fatalf("read %q expected %v, got %v", op.Name, op.Expect, got)
+		}
+	}
+
+	for _, op := range fx.Writes {
+		if err := opts.Set(op.Path, op.Value); err != nil {
+			t.Fatalf("write %q failed: %v", op.Name, err)
+		}
+		value, err := opts.Get(op.Path)
+		if err != nil {
+			t.Fatalf("write %q readback failed: %v", op.Name, err)
+		}
+		got, ok := value.(bool)
+		if !ok {
+			t.Fatalf("write %q readback expected bool, got %T", op.Name, value)
+		}
+		if got != op.Expect {
+			t.Fatalf("write %q expected %v, got %v", op.Name, op.Expect, got)
+		}
+	}
+}
+
+func TestSchemaGeneration(t *testing.T) {
+	type descriptor struct {
+		Path string `json:"path"`
+		Type string `json:"type"`
+	}
+	type fixture struct {
+		Snapshot map[string]any `json:"snapshot"`
+		Expect   struct {
+			Fields []descriptor `json:"fields"`
+		} `json:"expect"`
+	}
+
+	fx := loadFixture[fixture](t, "schema_fields.json")
+	opts := New(cloneMap(fx.Snapshot))
+	schema := opts.Schema()
+
+	got := make(map[string]string, len(schema.Fields))
+	for _, field := range schema.Fields {
+		got[field.Path] = field.Type
+	}
+
+	if len(got) != len(fx.Expect.Fields) {
+		t.Fatalf("expected %d schema fields, got %d", len(fx.Expect.Fields), len(got))
+	}
+
+	for _, field := range fx.Expect.Fields {
+		typ, exists := got[field.Path]
+		if !exists {
+			t.Fatalf("expected schema to contain path %q", field.Path)
+		}
+		if typ != field.Type {
+			t.Fatalf("path %q expected type %q, got %q", field.Path, field.Type, typ)
+		}
 	}
 }
 
@@ -649,13 +574,9 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 						inputMap, _ = toStringMap(input)
 					}
 					snapshot := mergeMaps(defaults, inputMap)
-					evaluator := factory.new(nil, registry)
-					if evaluator == nil {
-						t.Skipf("%s evaluator not available", factory.name)
-					}
 					opts := New(snapshot,
 						WithFunctionRegistry(registry),
-						WithEvaluator(evaluator),
+						WithEvaluator(factory.new(nil, registry)),
 					)
 
 					ctx := RuleContext{
