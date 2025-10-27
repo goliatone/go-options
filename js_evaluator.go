@@ -1,5 +1,3 @@
-//go:build js_eval
-
 package opts
 
 import (
@@ -8,6 +6,26 @@ import (
 	"github.com/dop251/goja"
 )
 
+// JSEvaluatorOption configures the JS evaluator instance.
+type JSEvaluatorOption func(*jsEvaluator)
+
+// JSWithProgramCache wires a ProgramCache into the JS evaluator.
+func JSWithProgramCache(cache ProgramCache) JSEvaluatorOption {
+	return func(e *jsEvaluator) {
+		e.cache = cache
+	}
+}
+
+// JSWithFunctionRegistry wires a FunctionRegistry into the JS evaluator.
+func JSWithFunctionRegistry(registry *FunctionRegistry) JSEvaluatorOption {
+	return func(e *jsEvaluator) {
+		if registry == nil {
+			return
+		}
+		e.registry = registry.Clone()
+	}
+}
+
 type jsEvaluator struct {
 	cache    ProgramCache
 	registry *FunctionRegistry
@@ -15,18 +33,20 @@ type jsEvaluator struct {
 
 // NewJSEvaluator constructs an Evaluator backed by goja.
 func NewJSEvaluator(opts ...JSEvaluatorOption) Evaluator {
-	cfg := applyJSEvaluatorOptions(opts)
-	return &jsEvaluator{
-		cache:    cfg.cache,
-		registry: cfg.registry,
+	e := &jsEvaluator{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(e)
+		}
 	}
+	return e
 }
 
 func (e *jsEvaluator) Evaluate(ctx RuleContext, expression string) (any, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("js", fmt.Errorf("expression must not be empty"))
 	}
-	ctx = ctx.withDefaults()
+	ctx = ctx.withDefaultNow().withDefaultMaps()
 	if e.cache == nil {
 		return e.run(ctx, expression, nil)
 	}
@@ -39,7 +59,7 @@ func (e *jsEvaluator) Evaluate(ctx RuleContext, expression string) (any, error) 
 
 func (e *jsEvaluator) Compile(expression string, _ ...CompileOption) (CompiledRule, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("js", fmt.Errorf("expression must not be empty"))
 	}
 	program, err := e.loadOrCompile(expression)
 	if err != nil {
@@ -62,7 +82,7 @@ func (e *jsEvaluator) loadOrCompile(expression string) (*goja.Program, error) {
 	}
 	program, err := goja.Compile("", e.wrapExpression(expression), false)
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("js", err)
 	}
 	if e.cache != nil {
 		e.cache.Set(expression, program)
@@ -76,13 +96,13 @@ func (e *jsEvaluator) run(ctx RuleContext, expression string, program *goja.Prog
 	if program != nil {
 		value, err := vm.RunProgram(program)
 		if err != nil {
-			return nil, err
+			return nil, wrapEvaluatorError("js", err)
 		}
 		return value.Export(), nil
 	}
 	value, err := vm.RunString(e.wrapExpression(expression))
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("js", err)
 	}
 	return value.Export(), nil
 }
@@ -121,12 +141,8 @@ type jsCompiledRule struct {
 
 func (r *jsCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	if r.evaluator == nil {
-		return nil, fmt.Errorf("js compiled rule missing evaluator")
+		return nil, wrapEvaluatorError("js", fmt.Errorf("compiled rule missing evaluator"))
 	}
-	ctx = ctx.withDefaults()
+	ctx = ctx.withDefaultNow().withDefaultMaps()
 	return r.evaluator.run(ctx, r.expression, r.program)
-}
-
-func jsEvaluatorAvailable() bool {
-	return true
 }

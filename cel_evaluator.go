@@ -51,7 +51,7 @@ func NewCELEvaluator(opts ...CELEvaluatorOption) Evaluator {
 
 func (e *celEvaluator) Evaluate(ctx RuleContext, expression string) (any, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("cel", fmt.Errorf("expression must not be empty"))
 	}
 	ctx = ctx.withDefaultNow().withDefaultMaps()
 	snapshot := snapshotAsMap(ctx.Snapshot)
@@ -61,14 +61,14 @@ func (e *celEvaluator) Evaluate(ctx RuleContext, expression string) (any, error)
 	}
 	out, _, err := program.program.Eval(e.activation(ctx, snapshot))
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("cel", err)
 	}
 	return out.Value(), nil
 }
 
 func (e *celEvaluator) Compile(expression string, _ ...CompileOption) (CompiledRule, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("cel", fmt.Errorf("expression must not be empty"))
 	}
 	return &celCompiledRule{
 		evaluator:  e,
@@ -90,19 +90,19 @@ func (e *celEvaluator) loadOrCompile(expression string, snapshot map[string]any)
 
 	env, err := e.buildEnv(snapshot)
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("cel", err)
 	}
 	ast, issues := env.Parse(expression)
 	if issues != nil && issues.Err() != nil {
-		return nil, issues.Err()
+		return nil, wrapEvaluatorError("cel", issues.Err())
 	}
 	checked, issues := env.Check(ast)
 	if issues != nil && issues.Err() != nil {
-		return nil, issues.Err()
+		return nil, wrapEvaluatorError("cel", issues.Err())
 	}
 	prg, err := env.Program(checked)
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("cel", err)
 	}
 
 	bundle := &celProgram{
@@ -122,22 +122,10 @@ func (e *celEvaluator) buildEnv(snapshot map[string]any) (*celgo.Env, error) {
 		celgo.Variable("metadata", celgo.DynType),
 	}
 	if e.registry != nil {
-		const maxArity = 6
-		fnOpts := make([]celgo.FunctionOpt, 0, maxArity)
-		for arity := 1; arity <= maxArity; arity++ {
-			argTypes := make([]*celgo.Type, 1, arity)
-			argTypes[0] = celgo.StringType
-			for i := 1; i < arity; i++ {
-				argTypes = append(argTypes, celgo.DynType)
-			}
-			fnOpts = append(fnOpts, celgo.Overload(
-				fmt.Sprintf("call_string_dyn_%d", arity-1),
-				argTypes,
-				celgo.DynType,
-				celgo.FunctionBinding(e.callBinding()),
-			))
+		opts = append(opts, celgo.Function("call", e.buildCallOverloads()...))
+		for _, name := range e.registry.Names() {
+			opts = append(opts, celgo.Function(name, e.buildDirectOverloads(name)...))
 		}
-		opts = append(opts, celgo.Function("call", fnOpts...))
 	}
 	for key := range snapshot {
 		opts = append(opts, celgo.Variable(key, celgo.DynType))
@@ -169,7 +157,7 @@ type celCompiledRule struct {
 
 func (r *celCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	if r.evaluator == nil {
-		return nil, fmt.Errorf("cel compiled rule missing evaluator")
+		return nil, wrapEvaluatorError("cel", fmt.Errorf("compiled rule missing evaluator"))
 	}
 	ctx = ctx.withDefaultNow().withDefaultMaps()
 	snapshot := snapshotAsMap(ctx.Snapshot)
@@ -179,7 +167,7 @@ func (r *celCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	}
 	out, _, err := program.program.Eval(r.evaluator.activation(ctx, snapshot))
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("cel", err)
 	}
 	return out.Value(), nil
 }
@@ -219,4 +207,67 @@ func (e *celEvaluator) callBinding() func(...ref.Val) ref.Val {
 		}
 		return types.DefaultTypeAdapter.NativeToValue(result)
 	}
+}
+
+func (e *celEvaluator) directBinding(name string) func(...ref.Val) ref.Val {
+	return func(values ...ref.Val) ref.Val {
+		if e.registry == nil {
+			return types.NewErr("opts: function registry not configured")
+		}
+		args := make([]any, 0, len(values))
+		for _, val := range values {
+			args = append(args, val.Value())
+		}
+		result, err := e.registry.Call(name, args...)
+		if err != nil {
+			return types.NewErr(err.Error())
+		}
+		if result == nil {
+			return types.NullValue
+		}
+		return types.DefaultTypeAdapter.NativeToValue(result)
+	}
+}
+
+func (e *celEvaluator) buildCallOverloads() []celgo.FunctionOpt {
+	const maxArity = 6
+	fnOpts := make([]celgo.FunctionOpt, 0, maxArity)
+	for arity := 1; arity <= maxArity; arity++ {
+		argTypes := make([]*celgo.Type, 1, arity)
+		argTypes[0] = celgo.StringType
+		for i := 1; i < arity; i++ {
+			argTypes = append(argTypes, celgo.DynType)
+		}
+		fnOpts = append(fnOpts, celgo.Overload(
+			fmt.Sprintf("call_string_dyn_%d", arity-1),
+			argTypes,
+			celgo.DynType,
+			celgo.FunctionBinding(e.callBinding()),
+		))
+	}
+	return fnOpts
+}
+
+func (e *celEvaluator) buildDirectOverloads(name string) []celgo.FunctionOpt {
+	const maxArity = 6
+	fnOpts := make([]celgo.FunctionOpt, 0, maxArity+1)
+	fnOpts = append(fnOpts, celgo.Overload(
+		fmt.Sprintf("%s_dyn_0", name),
+		[]*celgo.Type{},
+		celgo.DynType,
+		celgo.FunctionBinding(e.directBinding(name)),
+	))
+	for arity := 1; arity <= maxArity; arity++ {
+		argTypes := make([]*celgo.Type, 0, arity)
+		for i := 0; i < arity; i++ {
+			argTypes = append(argTypes, celgo.DynType)
+		}
+		fnOpts = append(fnOpts, celgo.Overload(
+			fmt.Sprintf("%s_dyn_%d", name, arity),
+			argTypes,
+			celgo.DynType,
+			celgo.FunctionBinding(e.directBinding(name)),
+		))
+	}
+	return fnOpts
 }

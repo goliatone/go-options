@@ -16,11 +16,50 @@ type FunctionRegistry struct {
 	functions map[string]Function
 }
 
+// FunctionEntry represents a single registration to apply to a registry.
+type FunctionEntry struct {
+	Name string
+	Fn   Function
+}
+
+func (e FunctionEntry) validate() error {
+	if e.Fn == nil {
+		return fmt.Errorf("opts: function %q is nil", e.Name)
+	}
+	if strings.TrimSpace(e.Name) == "" {
+		return fmt.Errorf("opts: function name must not be empty")
+	}
+	return nil
+}
+
 // NewFunctionRegistry constructs an empty registry.
 func NewFunctionRegistry() *FunctionRegistry {
 	return &FunctionRegistry{
 		functions: make(map[string]Function),
 	}
+}
+
+// MustFunctionRegistry constructs a registry from entries and panics on failure.
+func MustFunctionRegistry(entries ...FunctionEntry) *FunctionRegistry {
+	registry, err := NewFunctionRegistryFrom(entries...)
+	if err != nil {
+		panic(err)
+	}
+	return registry
+}
+
+// NewFunctionRegistryFrom constructs a registry seeded with entries.
+func NewFunctionRegistryFrom(entries ...FunctionEntry) (*FunctionRegistry, error) {
+	registry := NewFunctionRegistry()
+	for _, entry := range entries {
+		if err := entry.validate(); err != nil {
+			return nil, err
+		}
+		if err := registry.Register(entry.Name, entry.Fn); err != nil {
+			return nil, err
+		}
+	}
+	return registry, nil
 }
 
 // Register stores fn under name guarding against duplicates.

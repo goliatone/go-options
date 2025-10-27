@@ -47,24 +47,32 @@ func NewExprEvaluator(opts ...ExprEvaluatorOption) Evaluator {
 // Evaluate compiles and runs expression against ctx.Snapshot.
 func (e *exprEvaluator) Evaluate(ctx RuleContext, expression string) (any, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("expr", fmt.Errorf("expression must not be empty"))
 	}
 	ctx = ctx.withDefaultNow().withDefaultMaps()
 	env := e.environment(ctx)
 	if e.cache == nil {
-		return exprlang.Eval(expression, env)
+		result, err := exprlang.Eval(expression, env)
+		if err != nil {
+			return nil, wrapEvaluatorError("expr", err)
+		}
+		return result, nil
 	}
 	program, err := e.loadOrCompile(expression)
 	if err != nil {
 		return nil, err
 	}
-	return exprlang.Run(program, env)
+	result, err := exprlang.Run(program, env)
+	if err != nil {
+		return nil, wrapEvaluatorError("expr", err)
+	}
+	return result, nil
 }
 
 // Compile returns a compiled rule that evaluates expression per invocation.
 func (e *exprEvaluator) Compile(expression string, _ ...CompileOption) (CompiledRule, error) {
 	if expression == "" {
-		return nil, fmt.Errorf("expression must not be empty")
+		return nil, wrapEvaluatorError("expr", fmt.Errorf("expression must not be empty"))
 	}
 	program, err := e.loadOrCompile(expression)
 	if err != nil {
@@ -95,7 +103,7 @@ func (e *exprEvaluator) loadOrCompile(expression string) (*exprvm.Program, error
 	}
 	program, err := exprlang.Compile(expression, options...)
 	if err != nil {
-		return nil, err
+		return nil, wrapEvaluatorError("expr", err)
 	}
 	if e.cache != nil {
 		e.cache.Set(expression, program)
@@ -111,14 +119,18 @@ type exprCompiledRule struct {
 
 func (r *exprCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	if r.evaluator == nil {
-		return nil, fmt.Errorf("expr compiled rule missing evaluator")
+		return nil, wrapEvaluatorError("expr", fmt.Errorf("compiled rule missing evaluator"))
 	}
 	ctx = ctx.withDefaultNow().withDefaultMaps()
 	if r.program == nil {
 		return r.evaluator.Evaluate(ctx, r.expression)
 	}
 	env := r.evaluator.environment(ctx)
-	return exprlang.Run(r.program, env)
+	result, err := exprlang.Run(r.program, env)
+	if err != nil {
+		return nil, wrapEvaluatorError("expr", err)
+	}
+	return result, nil
 }
 
 func (e *exprEvaluator) environment(ctx RuleContext) map[string]any {
