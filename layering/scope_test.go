@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 )
 
@@ -87,7 +88,11 @@ type scopeFixtureScope struct {
 
 func loadScopeChainFixture(t *testing.T, name string) scopeChainFixture {
 	t.Helper()
-	path := filepath.Join("testdata", name)
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatalf("unable to resolve caller for fixture %q", name)
+	}
+	path := filepath.Join(filepath.Dir(file), "testdata", name)
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read scope chain fixture %q: %v", name, err)
