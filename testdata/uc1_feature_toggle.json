@@ -1,0 +1,38 @@
+{
+  "description": "UC-1 feature toggle scenarios covering default propagation and explicit overrides.",
+  "defaults": {
+    "Features": {
+      "NewUI": {
+        "Enabled": true
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "uses_defaults_when_field_missing",
+      "rule": "Features.NewUI.Enabled",
+      "input": {},
+      "expect": {
+        "value": true,
+        "err": ""
+      },
+      "notes": "Empty snapshot should rely on defaults to enable the feature."
+    },
+    {
+      "name": "explicit_disable_overrides_default",
+      "rule": "Features.NewUI.Enabled",
+      "input": {
+        "Features": {
+          "NewUI": {
+            "Enabled": false
+          }
+        }
+      },
+      "expect": {
+        "value": false,
+        "err": ""
+      },
+      "notes": "Explicit false should override the default true value."
+    }
+  ]
+}

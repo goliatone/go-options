@@ -1,0 +1,58 @@
+{
+  "description": "UC-2 channel selection scenarios capturing enabled channel lists and overrides.",
+  "defaults": {
+    "Channels": {
+      "Email": {
+        "Enabled": true
+      },
+      "Slack": {
+        "Enabled": true
+      },
+      "Push": {
+        "Enabled": false
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "defaults_enable_email_and_slack",
+      "input": {},
+      "expect": {
+        "activeChannels": [
+          "Email",
+          "Slack"
+        ],
+        "inactiveChannels": [
+          "Push"
+        ]
+      },
+      "notes": "When no user snapshot is provided, defaults activate Email and Slack but leave Push disabled."
+    },
+    {
+      "name": "explicit_channel_overrides",
+      "input": {
+        "Channels": {
+          "Email": {
+            "Enabled": false
+          },
+          "Slack": {
+            "Enabled": true
+          },
+          "Push": {
+            "Enabled": true
+          }
+        }
+      },
+      "expect": {
+        "activeChannels": [
+          "Slack",
+          "Push"
+        ],
+        "inactiveChannels": [
+          "Email"
+        ]
+      },
+      "notes": "User snapshot disables Email and enables Push overriding defaults."
+    }
+  ]
+}
