@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	celgo "github.com/google/cel-go/cel"
-	functions "github.com/google/cel-go/common/functions"
 	"github.com/google/cel-go/common/types"
 	"github.com/google/cel-go/common/types/ref"
 )
@@ -123,12 +122,22 @@ func (e *celEvaluator) buildEnv(snapshot map[string]any) (*celgo.Env, error) {
 		celgo.Variable("metadata", celgo.DynType),
 	}
 	if e.registry != nil {
-		opts = append(opts, celgo.Function("call", functions.NewVarArgOverload(
-			"call_dyn",
-			[]*celgo.Type{celgo.StringType},
-			celgo.DynType(),
-			e.callBinding(),
-		)))
+		const maxArity = 6
+		fnOpts := make([]celgo.FunctionOpt, 0, maxArity)
+		for arity := 1; arity <= maxArity; arity++ {
+			argTypes := make([]*celgo.Type, 1, arity)
+			argTypes[0] = celgo.StringType
+			for i := 1; i < arity; i++ {
+				argTypes = append(argTypes, celgo.DynType)
+			}
+			fnOpts = append(fnOpts, celgo.Overload(
+				fmt.Sprintf("call_string_dyn_%d", arity-1),
+				argTypes,
+				celgo.DynType,
+				celgo.FunctionBinding(e.callBinding()),
+			))
+		}
+		opts = append(opts, celgo.Function("call", fnOpts...))
 	}
 	for key := range snapshot {
 		opts = append(opts, celgo.Variable(key, celgo.DynType))
@@ -185,8 +194,8 @@ func snapshotAsMap(value any) map[string]any {
 	return map[string]any{}
 }
 
-func (e *celEvaluator) callBinding() func([]ref.Val) ref.Val {
-	return func(values []ref.Val) ref.Val {
+func (e *celEvaluator) callBinding() func(...ref.Val) ref.Val {
+	return func(values ...ref.Val) ref.Val {
 		if e.registry == nil {
 			return types.NewErr("opts: function registry not configured")
 		}
@@ -208,6 +217,6 @@ func (e *celEvaluator) callBinding() func([]ref.Val) ref.Val {
 		if result == nil {
 			return types.NullValue
 		}
-		return types.NativeToValue(result)
+		return types.DefaultTypeAdapter.NativeToValue(result)
 	}
 }

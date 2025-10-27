@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	exprlang "github.com/expr-lang/expr"
+	exprvm "github.com/expr-lang/expr/vm"
 )
 
 // ExprEvaluatorOption configures an expr evaluator instance.
@@ -76,16 +77,17 @@ func (e *exprEvaluator) Compile(expression string, _ ...CompileOption) (Compiled
 	}, nil
 }
 
-func (e *exprEvaluator) loadOrCompile(expression string) (*exprlang.Program, error) {
+func (e *exprEvaluator) loadOrCompile(expression string) (*exprvm.Program, error) {
 	if e.cache != nil {
 		if cached, ok := e.cache.Get(expression); ok {
-			if program, ok := cached.(*exprlang.Program); ok {
+			if program, ok := cached.(*exprvm.Program); ok {
 				return program, nil
 			}
 		}
 	}
 	options := []exprlang.Option{
 		exprlang.Env(map[string]any{}),
+		exprlang.AllowUndefinedVariables(),
 	}
 	for _, name := range e.registryNames() {
 		fn := e.registryFunction(name)
@@ -103,7 +105,7 @@ func (e *exprEvaluator) loadOrCompile(expression string) (*exprlang.Program, err
 
 type exprCompiledRule struct {
 	evaluator  *exprEvaluator
-	program    *exprlang.Program
+	program    *exprvm.Program
 	expression string
 }
 

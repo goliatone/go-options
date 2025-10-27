@@ -3,6 +3,7 @@ package opts
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -68,17 +69,11 @@ func (o *Options[T]) Get(path string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	var current any = o.Value
+	current := any(o.Value)
 	for _, segment := range segments {
-		switch typed := current.(type) {
-		case map[string]any:
-			next, ok := typed[segment]
-			if !ok {
-				return nil, fmt.Errorf("opts: path %q not found", path)
-			}
-			current = next
-		default:
-			return nil, fmt.Errorf("opts: path %q cannot traverse segment %q", path, segment)
+		current, err = navigateSegment(current, segment)
+		if err != nil {
+			return nil, fmt.Errorf("opts: path %q cannot traverse segment %q: %w", path, segment, err)
 		}
 	}
 	return current, nil
@@ -131,4 +126,80 @@ func splitPath(path string) ([]string, error) {
 		}
 	}
 	return segments, nil
+}
+
+func navigateSegment(value any, segment string) (any, error) {
+	if value == nil {
+		return nil, fmt.Errorf("encountered nil value")
+	}
+
+	rv := reflect.ValueOf(value)
+	for rv.Kind() == reflect.Pointer {
+		if rv.IsNil() {
+			return nil, fmt.Errorf("encountered nil pointer")
+		}
+		rv = rv.Elem()
+		value = rv.Interface()
+	}
+
+	switch rv.Kind() {
+	case reflect.Map:
+		if rv.Type().Key().Kind() != reflect.String {
+			return nil, fmt.Errorf("map key type %s unsupported", rv.Type().Key())
+		}
+		elem := rv.MapIndex(reflect.ValueOf(segment))
+		if !elem.IsValid() {
+			return nil, fmt.Errorf("segment not found")
+		}
+		return elem.Interface(), nil
+	case reflect.Struct:
+		field, ok := structFieldByName(rv, segment)
+		if !ok {
+			return nil, fmt.Errorf("field not found")
+		}
+		return field.Interface(), nil
+	case reflect.Slice, reflect.Array:
+		index, err := strconv.Atoi(segment)
+		if err != nil {
+			return nil, fmt.Errorf("expected numeric index: %v", err)
+		}
+		if index < 0 || index >= rv.Len() {
+			return nil, fmt.Errorf("index %d out of bounds", index)
+		}
+		return rv.Index(index).Interface(), nil
+	default:
+		return nil, fmt.Errorf("type %T does not support navigation", value)
+	}
+}
+
+func structFieldByName(rv reflect.Value, segment string) (reflect.Value, bool) {
+	if !rv.IsValid() {
+		return reflect.Value{}, false
+	}
+
+	if sf, ok := rv.Type().FieldByName(segment); ok && sf.IsExported() {
+		field := rv.FieldByIndex(sf.Index)
+		if field.CanInterface() {
+			return field, true
+		}
+	}
+
+	for i := 0; i < rv.NumField(); i++ {
+		sf := rv.Type().Field(i)
+		if !sf.IsExported() {
+			continue
+		}
+		tag := sf.Tag.Get("json")
+		if tag == "" || tag == "-" {
+			continue
+		}
+		name := strings.Split(tag, ",")[0]
+		if name == segment {
+			field := rv.Field(i)
+			if field.CanInterface() {
+				return field, true
+			}
+		}
+	}
+	return reflect.Value{}, false
 }
