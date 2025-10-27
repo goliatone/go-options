@@ -1,0 +1,39 @@
+{
+  "description": "Dynamic path helpers for Get/Set covering nested maps and map creation.",
+  "snapshot": {
+    "Channels": {
+      "Email": {
+        "Enabled": true
+      },
+      "Slack": {
+        "Enabled": false
+      }
+    }
+  },
+  "reads": [
+    {
+      "name": "email_enabled",
+      "path": "Channels.Email.Enabled",
+      "expect": true
+    },
+    {
+      "name": "slack_disabled",
+      "path": "Channels.Slack.Enabled",
+      "expect": false
+    }
+  ],
+  "writes": [
+    {
+      "name": "enable_slack",
+      "path": "Channels.Slack.Enabled",
+      "value": true,
+      "expect": true
+    },
+    {
+      "name": "create_push_channel",
+      "path": "Channels.Push.Enabled",
+      "value": true,
+      "expect": true
+    }
+  ]
+}

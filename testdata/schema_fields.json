@@ -1,0 +1,39 @@
+{
+  "description": "Schema descriptor expectations for nested channel configuration.",
+  "snapshot": {
+    "Channels": {
+      "Email": {
+        "Enabled": true,
+        "Frequency": "immediate"
+      },
+      "Slack": {
+        "Enabled": false
+      }
+    },
+    "Features": {
+      "NewUI": {
+        "Enabled": true
+      }
+    }
+  },
+  "expect": {
+    "fields": [
+      {
+        "path": "Channels.Email.Enabled",
+        "type": "bool"
+      },
+      {
+        "path": "Channels.Email.Frequency",
+        "type": "string"
+      },
+      {
+        "path": "Channels.Slack.Enabled",
+        "type": "bool"
+      },
+      {
+        "path": "Features.NewUI.Enabled",
+        "type": "bool"
+      }
+    ]
+  }
+}

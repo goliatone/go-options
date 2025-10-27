@@ -1,0 +1,32 @@
+{
+  "description": "Cache hit/miss goldens for evaluator program caching.",
+  "defaults": {
+    "Features": {
+      "NewUI": {
+        "Enabled": true
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "repeated_expression_hits_cache",
+      "rule": "Features.NewUI.Enabled",
+      "input": {},
+      "iterations": 3,
+      "expect": {
+        "hits": 2,
+        "misses": 1
+      }
+    },
+    {
+      "name": "distinct_expression_miss",
+      "rule": "Features.NewUI.Enabled && Features.NewUI.Enabled",
+      "input": {},
+      "iterations": 1,
+      "expect": {
+        "hits": 0,
+        "misses": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "description": "Custom function scenarios exercised through the call() helper.",
+  "defaults": {
+    "QuietHours": {
+      "Start": "time:2024-01-01T09:00:00Z",
+      "End": "time:2024-01-01T17:00:00Z"
+    }
+  },
+  "cases": [
+    {
+      "name": "matches_ignore_case",
+      "rule": "call(\"equalsIgnoreCase\", metadata.expected, metadata.actual)",
+      "input": {},
+      "metadata": {
+        "expected": "ALPHA",
+        "actual": "alpha"
+      },
+      "expect": {
+        "value": true,
+        "err": ""
+      }
+    },
+    {
+      "name": "within_quiet_hours_window",
+      "rule": "call(\"withinQuietHours\", now, QuietHours.Start, QuietHours.End)",
+      "input": {},
+      "context": {
+        "now": "time:2024-01-01T10:00:00Z"
+      },
+      "expect": {
+        "value": true,
+        "err": ""
+      }
+    },
+    {
+      "name": "outside_quiet_hours_window",
+      "rule": "call(\"withinQuietHours\", now, QuietHours.Start, QuietHours.End)",
+      "input": {},
+      "context": {
+        "now": "time:2024-01-01T20:00:00Z"
+      },
+      "expect": {
+        "value": false,
+        "err": ""
+      }
+    }
+  ]
+}

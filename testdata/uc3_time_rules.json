@@ -1,0 +1,55 @@
+{
+  "description": "UC-3 time-based rule evaluation over quiet hour windows.",
+  "defaults": {
+    "QuietHours": {
+      "Start": "time:2024-01-01T09:00:00Z",
+      "End": "time:2024-01-01T17:00:00Z"
+    }
+  },
+  "cases": [
+    {
+      "name": "within_default_quiet_hours",
+      "rule": "now >= QuietHours.Start && now < QuietHours.End",
+      "input": {},
+      "context": {
+        "now": "time:2024-01-01T10:00:00Z"
+      },
+      "expect": {
+        "value": true,
+        "err": ""
+      },
+      "notes": "Now falls within default quiet hours, rule should pass."
+    },
+    {
+      "name": "outside_default_quiet_hours",
+      "rule": "now >= QuietHours.Start && now < QuietHours.End",
+      "input": {},
+      "context": {
+        "now": "time:2024-01-01T18:00:00Z"
+      },
+      "expect": {
+        "value": false,
+        "err": ""
+      },
+      "notes": "Now occurs after quiet hours end."
+    },
+    {
+      "name": "override_quiet_hours_in_snapshot",
+      "rule": "now >= QuietHours.Start && now < QuietHours.End",
+      "input": {
+        "QuietHours": {
+          "Start": "time:2024-01-01T20:00:00Z",
+          "End": "time:2024-01-01T23:00:00Z"
+        }
+      },
+      "context": {
+        "now": "time:2024-01-01T21:00:00Z"
+      },
+      "expect": {
+        "value": true,
+        "err": ""
+      },
+      "notes": "Snapshot overrides quiet hours; now is within the override window."
+    }
+  ]
+}
