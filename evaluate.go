@@ -16,7 +16,7 @@ func (o *Options[T]) Evaluate(expr string) (Response[any], error) {
 	if err != nil {
 		return Response[any]{}, err
 	}
-	ctx := RuleContext{Snapshot: o.Value}
+	ctx := RuleContext{Snapshot: o.Value}.withDefaultNow().withDefaultMaps()
 	value, evalErr := evaluator.Evaluate(ctx, expr)
 	if evalErr != nil {
 		return Response[any]{}, evalErr
@@ -37,6 +37,7 @@ func (o *Options[T]) EvaluateWith(ctx RuleContext, expr string) (Response[any], 
 	if ctx.Snapshot == nil {
 		ctx.Snapshot = o.Value
 	}
+	ctx = ctx.withDefaultNow().withDefaultMaps()
 	value, evalErr := evaluator.Evaluate(ctx, expr)
 	if evalErr != nil {
 		return Response[any]{}, evalErr
@@ -46,8 +47,20 @@ func (o *Options[T]) EvaluateWith(ctx RuleContext, expr string) (Response[any], 
 
 func (o *Options[T]) resolveEvaluator() (Evaluator, error) {
 	evaluator := o.evaluator()
-	if evaluator == nil {
+	if evaluator != nil {
+		return evaluator, nil
+	}
+	var exprOpts []ExprEvaluatorOption
+	if cache := o.programCache(); cache != nil {
+		exprOpts = append(exprOpts, ExprWithProgramCache(cache))
+	}
+	if registry := o.functionRegistry(); registry != nil {
+		exprOpts = append(exprOpts, ExprWithFunctionRegistry(registry))
+	}
+	defaultEvaluator := NewExprEvaluator(exprOpts...)
+	if defaultEvaluator == nil {
 		return nil, ErrNoEvaluator
 	}
-	return evaluator, nil
+	o.withEvaluator(defaultEvaluator)
+	return defaultEvaluator, nil
 }

@@ -1,5 +1,7 @@
 package opts
 
+import "time"
+
 // Options holds a typed options value and evaluator configuration.
 type Options[T any] struct {
 	Value T
@@ -15,6 +17,33 @@ type Response[T any] struct {
 // RuleContext carries inputs needed when evaluating an expression.
 type RuleContext struct {
 	Snapshot any
+	Now      *time.Time
+	Args     map[string]any
+	Metadata map[string]any
+}
+
+func (ctx RuleContext) withDefaultNow() RuleContext {
+	if ctx.Now != nil {
+		return ctx
+	}
+	now := time.Now()
+	ctx.Now = &now
+	return ctx
+}
+
+func (ctx RuleContext) timestamp() time.Time {
+	ctx = ctx.withDefaultNow()
+	return *ctx.Now
+}
+
+func (ctx RuleContext) withDefaultMaps() RuleContext {
+	if ctx.Args == nil {
+		ctx.Args = map[string]any{}
+	}
+	if ctx.Metadata == nil {
+		ctx.Metadata = map[string]any{}
+	}
+	return ctx
 }
 
 // Evaluator executes expressions against a rule context.
@@ -46,7 +75,9 @@ func (f compileOptionFunc) applyCompileOption(cfg *compileConfig) {
 type Option func(*optionsConfig)
 
 type optionsConfig struct {
-	evaluator Evaluator
+	evaluator    Evaluator
+	programCache ProgramCache
+	functions    *FunctionRegistry
 }
 
 func applyOptions(opts []Option) optionsConfig {
@@ -72,4 +103,12 @@ func (o *Options[T]) evaluatorOrDefault(defaultEvaluator Evaluator) Evaluator {
 		return o.cfg.evaluator
 	}
 	return defaultEvaluator
+}
+
+func (o *Options[T]) programCache() ProgramCache {
+	return o.cfg.programCache
+}
+
+func (o *Options[T]) functionRegistry() *FunctionRegistry {
+	return o.cfg.functions
 }

@@ -1,6 +1,10 @@
 package opts
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 // New constructs an Options wrapper around the provided value.
 func New[T any](value T, opts ...Option) *Options[T] {
@@ -56,4 +60,75 @@ func validateValue[T any](value T) error {
 
 func isZero[T any](value T) bool {
 	return reflect.ValueOf(value).IsZero()
+}
+
+// Get retrieves the value located at path using dot notation.
+func (o *Options[T]) Get(path string) (any, error) {
+	segments, err := splitPath(path)
+	if err != nil {
+		return nil, err
+	}
+	var current any = o.Value
+	for _, segment := range segments {
+		switch typed := current.(type) {
+		case map[string]any:
+			next, ok := typed[segment]
+			if !ok {
+				return nil, fmt.Errorf("opts: path %q not found", path)
+			}
+			current = next
+		default:
+			return nil, fmt.Errorf("opts: path %q cannot traverse segment %q", path, segment)
+		}
+	}
+	return current, nil
+}
+
+// Set stores value at the path creating intermediate maps as needed.
+func (o *Options[T]) Set(path string, value any) error {
+	segments, err := splitPath(path)
+	if err != nil {
+		return err
+	}
+	if len(segments) == 0 {
+		return fmt.Errorf("opts: path must not be empty")
+	}
+	var current any = o.Value
+	for i, segment := range segments[:len(segments)-1] {
+		m, ok := current.(map[string]any)
+		if !ok {
+			return fmt.Errorf("opts: path %q cannot traverse segment %q", path, segments[i])
+		}
+		next, exists := m[segment]
+		if !exists {
+			next = map[string]any{}
+			m[segment] = next
+		}
+		current = next
+	}
+	lastMap, ok := current.(map[string]any)
+	if !ok {
+		return fmt.Errorf("opts: path %q cannot assign segment %q", path, segments[len(segments)-1])
+	}
+	lastMap[segments[len(segments)-1]] = value
+	return nil
+}
+
+// Schema returns a read-only descriptor of the wrapped value.
+func (o *Options[T]) Schema() Schema {
+	fields := deriveSchema(any(o.Value), "")
+	return Schema{Fields: fields}
+}
+
+func splitPath(path string) ([]string, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, fmt.Errorf("opts: path must not be empty")
+	}
+	segments := strings.Split(path, ".")
+	for _, segment := range segments {
+		if segment == "" {
+			return nil, fmt.Errorf("opts: path %q contains empty segment", path)
+		}
+	}
+	return segments, nil
 }
