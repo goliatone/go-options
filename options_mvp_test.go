@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	layering "github.com/goliatone/go-options/layering"
 )
 
 var errInvalid = errors.New("invalid value")
@@ -102,6 +104,183 @@ func TestLoadRunsValidation(t *testing.T) {
 
 	if _, err := Load(testValidatable{Valid: true}); err != nil {
 		t.Fatalf("unexpected error from Load: %v", err)
+	}
+}
+
+func TestOptionsCloneAndWithValue(t *testing.T) {
+	type snapshot struct {
+		Enabled bool
+		Count   int
+	}
+
+	cache := &fakeProgramCache{}
+	original := New(snapshot{Enabled: true, Count: 1}, WithProgramCache(cache))
+
+	clone := original.Clone()
+	if clone == nil {
+		t.Fatalf("expected clone to be non-nil")
+	}
+	if clone == original {
+		t.Fatalf("expected clone to return a new pointer")
+	}
+	if !reflect.DeepEqual(original.Value, clone.Value) {
+		t.Fatalf("clone should copy value; want %+v got %+v", original.Value, clone.Value)
+	}
+
+	clone.Value.Enabled = false
+	clone.Value.Count = 99
+	if !original.Value.Enabled || original.Value.Count != 1 {
+		t.Fatalf("mutating clone must not affect original; original now %+v", original.Value)
+	}
+	if clone.programCache() != original.programCache() {
+		t.Fatalf("clone should preserve program cache reference")
+	}
+
+	updated := original.WithValue(snapshot{Enabled: false, Count: 5})
+	if updated == nil {
+		t.Fatalf("expected WithValue to return new wrapper")
+	}
+	if updated == original {
+		t.Fatalf("expected WithValue to return a new pointer")
+	}
+	if !original.Value.Enabled || original.Value.Count != 1 {
+		t.Fatalf("WithValue should not mutate original; got %+v", original.Value)
+	}
+	if updated.Value.Enabled || updated.Value.Count != 5 {
+		t.Fatalf("WithValue should set provided value; got %+v", updated.Value)
+	}
+	if updated.programCache() != original.programCache() {
+		t.Fatalf("WithValue should preserve program cache")
+	}
+
+	var nilOpts *Options[snapshot]
+	if clone := nilOpts.Clone(); clone != nil {
+		t.Fatalf("nil Clone should return nil, got %+v", clone)
+	}
+	if result := nilOpts.WithValue(snapshot{Enabled: true}); result == nil || !result.Value.Enabled {
+		t.Fatalf("expected nil WithValue to construct wrapper, got %+v", result)
+	}
+}
+
+func TestEvaluateWithWrapsEvaluationError(t *testing.T) {
+	opts := New(map[string]any{"flag": true})
+	ctx := RuleContext{
+		Scope: "user:42",
+	}
+	_, err := opts.EvaluateWith(ctx, "flag &&")
+	if err == nil {
+		t.Fatalf("expected evaluation error")
+	}
+	var evalErr *EvaluationError
+	if !errors.As(err, &evalErr) {
+		t.Fatalf("expected EvaluationError, got %T", err)
+	}
+	if evalErr.Engine != "expr" {
+		t.Fatalf("expected engine expr, got %q", evalErr.Engine)
+	}
+	if evalErr.Expr != "flag &&" {
+		t.Fatalf("unexpected expr metadata: %q", evalErr.Expr)
+	}
+	if evalErr.Scope != "user:42" {
+		t.Fatalf("expected scope metadata, got %q", evalErr.Scope)
+	}
+	if !errors.Is(err, evalErr.Err) {
+		t.Fatalf("expected original error to unwrap")
+	}
+}
+
+func TestEvaluatorLoggerRecordsEvents(t *testing.T) {
+	logger := &recordingLogger{}
+	opts := New(map[string]any{"flag": true}, WithEvaluatorLogger(logger))
+
+	if _, err := opts.Evaluate("flag"); err != nil {
+		t.Fatalf("unexpected evaluate error: %v", err)
+	}
+	if len(logger.events) != 1 {
+		t.Fatalf("expected 1 logged event, got %d", len(logger.events))
+	}
+	success := logger.events[0]
+	if success.Engine != "expr" {
+		t.Fatalf("expected engine expr, got %q", success.Engine)
+	}
+	if success.Err != nil {
+		t.Fatalf("expected nil error for successful evaluation, got %v", success.Err)
+	}
+	if success.Expr != "flag" {
+		t.Fatalf("unexpected expression logged: %q", success.Expr)
+	}
+	if success.Scope != "unknown" {
+		t.Fatalf("expected unknown scope by default, got %q", success.Scope)
+	}
+
+	if _, err := opts.EvaluateWith(RuleContext{Scope: "group:7"}, "flag &&"); err == nil {
+		t.Fatalf("expected evaluation error")
+	}
+	if len(logger.events) != 2 {
+		t.Fatalf("expected 2 logged events, got %d", len(logger.events))
+	}
+	failure := logger.events[1]
+	if failure.Scope != "group:7" {
+		t.Fatalf("expected scope propagation, got %q", failure.Scope)
+	}
+	if failure.Expr != "flag &&" {
+		t.Fatalf("unexpected expression metadata: %q", failure.Expr)
+	}
+	var evalErr *EvaluationError
+	if failure.Err == nil || !errors.As(failure.Err, &evalErr) {
+		t.Fatalf("expected EvaluationError in log event, got %T", failure.Err)
+	}
+	if evalErr.Engine != "expr" {
+		t.Fatalf("expected engine expr in failure, got %q", evalErr.Engine)
+	}
+}
+
+func TestOptionsLayerWith(t *testing.T) {
+	type snapshot struct {
+		Enabled bool
+		Tag     string
+		Limit   int
+	}
+
+	defaults := snapshot{Tag: "defaults", Limit: 10}
+	group := snapshot{Tag: "group"}
+	user := snapshot{Enabled: true, Limit: 5}
+
+	eval := &capturingEvaluator{}
+	original := New(defaults, WithEvaluator(eval))
+
+	layered := original.LayerWith(user, group)
+	if layered == nil {
+		t.Fatalf("expected layered options to be non-nil")
+	}
+	if layered == original {
+		t.Fatalf("LayerWith must return a new wrapper")
+	}
+
+	want := layering.MergeLayers(user, group, defaults)
+	if !reflect.DeepEqual(want, layered.Value) {
+		t.Fatalf("unexpected layered value\nwant: %#v\n got: %#v", want, layered.Value)
+	}
+
+	if !reflect.DeepEqual(defaults, original.Value) {
+		t.Fatalf("LayerWith should not mutate original; got %+v", original.Value)
+	}
+
+	if layered.evaluator() != original.evaluator() {
+		t.Fatalf("LayerWith should preserve evaluator configuration")
+	}
+
+	same := original.LayerWith()
+	if same == original {
+		t.Fatalf("LayerWith without layers should still return a new wrapper")
+	}
+	if !reflect.DeepEqual(original.Value, same.Value) {
+		t.Fatalf("expected no-op layering when no additional layers provided")
+	}
+
+	var nilOpts *Options[snapshot]
+	if out := nilOpts.LayerWith(user); out == nil || !reflect.DeepEqual(user, out.Value) {
+		t.Fatalf("nil LayerWith should hydrate from layers, got %+v", out)
 	}
 }
 
@@ -630,11 +809,7 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 
 func loadFixture[T any](t *testing.T, name string) T {
 	t.Helper()
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatalf("unable to resolve caller for fixture %q", name)
-	}
-	path := filepath.Join(filepath.Dir(file), "testdata", name)
+	path := filepath.Join("testdata", name)
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read fixture %q: %v", path, err)
@@ -782,4 +957,12 @@ func (c *capturingEvaluator) Compile(string, ...CompileOption) (CompiledRule, er
 
 func (c *capturingEvaluator) reset() {
 	c.contexts = c.contexts[:0]
+}
+
+type recordingLogger struct {
+	events []EvaluatorLogEvent
+}
+
+func (r *recordingLogger) LogEvaluation(event EvaluatorLogEvent) {
+	r.events = append(r.events, event)
 }

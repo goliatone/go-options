@@ -1,0 +1,231 @@
+{
+  "description": "CMS-style payloads covering default decode, hook transformations, and validation expectations",
+  "cases": [
+    {
+      "name": "global defaults decode",
+      "slug": "global/notifications",
+      "scope": "global",
+      "input": {
+        "enabled": true,
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "daily",
+            "threshold": 1
+          },
+          "push": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 5
+          }
+        },
+        "limits": {
+          "daily": 10,
+          "monthly": 100
+        },
+        "tags": [
+          "global",
+          "notifications"
+        ]
+      },
+      "expect": {
+        "enabled": true,
+        "quietHours": {
+          "start": "",
+          "end": ""
+        },
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "daily",
+            "threshold": 1
+          },
+          "push": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 5
+          }
+        },
+        "limits": {
+          "daily": 10,
+          "monthly": 100
+        },
+        "tags": [
+          "global",
+          "notifications"
+        ]
+      }
+    },
+    {
+      "name": "user override with quiet hours hook",
+      "slug": "user/42/notifications",
+      "scope": "user",
+      "preHooks": [
+        "quiet_hours_split"
+      ],
+      "options": [
+        "use_number"
+      ],
+      "input": {
+        "enabled": true,
+        "quietHours": "22:00-06:00",
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "immediate",
+            "threshold": 2
+          },
+          "push": {
+            "enabled": true,
+            "frequency": "hourly",
+            "threshold": 3
+          }
+        },
+        "limits": {
+          "daily": 15,
+          "monthly": 120
+        },
+        "tags": [
+          "user",
+          "beta"
+        ]
+      },
+      "expect": {
+        "enabled": true,
+        "quietHours": {
+          "start": "22:00",
+          "end": "06:00"
+        },
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "immediate",
+            "threshold": 2
+          },
+          "push": {
+            "enabled": true,
+            "frequency": "hourly",
+            "threshold": 3
+          }
+        },
+        "limits": {
+          "daily": 15,
+          "monthly": 120
+        },
+        "tags": [
+          "user",
+          "beta"
+        ]
+      }
+    },
+    {
+      "name": "post hook ensures tags default",
+      "slug": "group/7/notifications",
+      "scope": "group",
+      "postHooks": [
+        "ensure_tag"
+      ],
+      "input": {
+        "enabled": false,
+        "channels": {
+          "email": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 0
+          },
+          "push": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 0
+          }
+        },
+        "limits": {
+          "daily": 0,
+          "monthly": 0
+        }
+      },
+      "expect": {
+        "enabled": false,
+        "quietHours": {
+          "start": "",
+          "end": ""
+        },
+        "channels": {
+          "email": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 0
+          },
+          "push": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 0
+          }
+        },
+        "limits": {
+          "daily": 0,
+          "monthly": 0
+        },
+        "tags": [
+          "group:7"
+        ]
+      }
+    },
+    {
+      "name": "unknown field rejected",
+      "slug": "user/99/notifications",
+      "scope": "user",
+      "options": [
+        "disallow_unknown"
+      ],
+      "input": {
+        "enabled": true,
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "daily",
+            "threshold": 1
+          }
+        },
+        "deprecated": true
+      },
+      "expectErr": "json: unknown field \"deprecated\""
+    },
+    {
+      "name": "custom decoder handles snapshot string",
+      "slug": "user/55/notifications",
+      "scope": "user",
+      "customDecoder": "snapshot_string",
+      "input": {
+        "snapshot": "{\"enabled\":true,\"channels\":{\"email\":{\"enabled\":true,\"frequency\":\"daily\",\"threshold\":1},\"push\":{\"enabled\":false,\"frequency\":\"daily\",\"threshold\":5}},\"limits\":{\"daily\":8,\"monthly\":90},\"tags\":[\"user\",\"imported\"]}"
+      },
+      "expect": {
+        "enabled": true,
+        "quietHours": {
+          "start": "",
+          "end": ""
+        },
+        "channels": {
+          "email": {
+            "enabled": true,
+            "frequency": "daily",
+            "threshold": 1
+          },
+          "push": {
+            "enabled": false,
+            "frequency": "daily",
+            "threshold": 5
+          }
+        },
+        "limits": {
+          "daily": 8,
+          "monthly": 90
+        },
+        "tags": [
+          "user",
+          "imported"
+        ]
+      }
+    }
+  ]
+}
