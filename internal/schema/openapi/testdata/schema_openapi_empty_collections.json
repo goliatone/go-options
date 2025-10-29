@@ -1,0 +1,31 @@
+{
+  "snapshot": {
+    "emptyMap": {},
+    "emptySlice": [],
+    "data": [
+      []
+    ]
+  },
+  "expect": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "emptyMap": {
+          "type": "object",
+          "properties": {}
+        },
+        "emptySlice": {
+          "type": "array",
+          "items": {}
+        }
+      }
+    }
+  }
+}
