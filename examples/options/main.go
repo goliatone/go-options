@@ -7,7 +7,7 @@ import (
 	"log"
 
 	opts "github.com/goliatone/opts"
-	openapi "github.com/goliatone/opts/internal/schema/openapi"
+	openapi "github.com/goliatone/opts/schema/openapi"
 )
 
 // ServerConfig holds server settings.
