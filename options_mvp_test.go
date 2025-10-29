@@ -28,6 +28,22 @@ func (v testValidatable) Validate() error {
 	return nil
 }
 
+type stubSchemaGenerator struct {
+	doc       SchemaDocument
+	err       error
+	calls     int
+	lastValue any
+}
+
+func (s *stubSchemaGenerator) Generate(value any) (SchemaDocument, error) {
+	s.calls++
+	s.lastValue = value
+	if s.err != nil {
+		return SchemaDocument{}, s.err
+	}
+	return s.doc, nil
+}
+
 var evaluatorFactories = []struct {
 	name string
 	new  func(cache ProgramCache, registry *FunctionRegistry) Evaluator
@@ -666,10 +682,21 @@ func TestSchemaGeneration(t *testing.T) {
 
 	fx := loadFixture[fixture](t, "schema_fields.json")
 	opts := New(cloneMap(fx.Snapshot))
-	schema := opts.Schema()
+	doc, err := opts.Schema()
+	if err != nil {
+		t.Fatalf("Schema returned error: %v", err)
+	}
+	if doc.Format != SchemaFormatDescriptors {
+		t.Fatalf("expected SchemaFormatDescriptors, got %q", doc.Format)
+	}
 
-	got := make(map[string]string, len(schema.Fields))
-	for _, field := range schema.Fields {
+	fields, ok := doc.Document.([]FieldDescriptor)
+	if !ok {
+		t.Fatalf("expected document to be []FieldDescriptor, got %T", doc.Document)
+	}
+
+	got := make(map[string]string, len(fields))
+	for _, field := range fields {
 		got[field.Path] = field.Type
 	}
 
@@ -685,6 +712,62 @@ func TestSchemaGeneration(t *testing.T) {
 		if typ != field.Type {
 			t.Fatalf("path %q expected type %q, got %q", field.Path, field.Type, typ)
 		}
+	}
+}
+
+func TestSchemaUsesConfiguredGenerator(t *testing.T) {
+	snapshot := map[string]any{"enabled": true}
+	stub := &stubSchemaGenerator{
+		doc: SchemaDocument{
+			Format:   SchemaFormat("custom"),
+			Document: map[string]string{"schema": "custom"},
+		},
+	}
+
+	opts := New(snapshot, WithSchemaGenerator(stub))
+
+	doc, err := opts.Schema()
+	if err != nil {
+		t.Fatalf("Schema returned error: %v", err)
+	}
+	if stub.calls != 1 {
+		t.Fatalf("expected generator to be called once, got %d", stub.calls)
+	}
+	if !reflect.DeepEqual(stub.lastValue, snapshot) {
+		t.Fatalf("generator received unexpected value: %+v", stub.lastValue)
+	}
+	if doc.Format != stub.doc.Format {
+		t.Fatalf("expected format %q, got %q", stub.doc.Format, doc.Format)
+	}
+	if !reflect.DeepEqual(doc.Document, stub.doc.Document) {
+		t.Fatalf("expected document %+v, got %+v", stub.doc.Document, doc.Document)
+	}
+}
+
+func TestSchemaGeneratorErrorIsPropagated(t *testing.T) {
+	expectErr := errors.New("boom")
+	opts := New(map[string]any{"key": "value"}, WithSchemaGenerator(&stubSchemaGenerator{err: expectErr}))
+
+	if _, err := opts.Schema(); !errors.Is(err, expectErr) {
+		t.Fatalf("expected error %v, got %v", expectErr, err)
+	}
+}
+
+func TestSchemaHandlesNilOptions(t *testing.T) {
+	var opts *Options[map[string]any]
+	doc, err := opts.Schema()
+	if err != nil {
+		t.Fatalf("Schema returned error: %v", err)
+	}
+	if doc.Format != SchemaFormatDescriptors {
+		t.Fatalf("expected descriptors format for nil options, got %q", doc.Format)
+	}
+	fields, ok := doc.Document.([]FieldDescriptor)
+	if !ok {
+		t.Fatalf("expected []FieldDescriptor, got %T", doc.Document)
+	}
+	if len(fields) != 0 {
+		t.Fatalf("expected empty descriptor list for nil options, got %d", len(fields))
 	}
 }
 
