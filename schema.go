@@ -6,18 +6,35 @@ import (
 	"strings"
 )
 
-// Schema represents read-only descriptors for the wrapped value.
-type Schema struct {
-	Fields []FieldDescriptor
-}
-
 // FieldDescriptor describes a path and the inferred type.
 type FieldDescriptor struct {
 	Path string
 	Type string
 }
 
-func deriveSchema(value any, prefix string) []FieldDescriptor {
+// DefaultSchemaGenerator returns the built-in descriptor-based schema generator.
+func DefaultSchemaGenerator() SchemaGenerator {
+	return descriptorGenerator{}
+}
+
+type descriptorGenerator struct{}
+
+func (descriptorGenerator) Generate(value any) (SchemaDocument, error) {
+	descriptors := deriveFieldDescriptors(value, "")
+	if descriptors == nil {
+		descriptors = []FieldDescriptor{}
+	}
+	return SchemaDocument{
+		Format:   SchemaFormatDescriptors,
+		Document: descriptors,
+	}, nil
+}
+
+func deriveFieldDescriptors(value any, prefix string) []FieldDescriptor {
+	if value == nil {
+		return nil
+	}
+
 	switch typed := value.(type) {
 	case map[string]any:
 		if len(typed) == 0 {
@@ -34,7 +51,7 @@ func deriveSchema(value any, prefix string) []FieldDescriptor {
 		var fields []FieldDescriptor
 		for _, key := range keys {
 			nextPrefix := joinPath(prefix, key)
-			fields = append(fields, deriveSchema(typed[key], nextPrefix)...)
+			fields = append(fields, deriveFieldDescriptors(typed[key], nextPrefix)...)
 		}
 		return fields
 	case []any:
