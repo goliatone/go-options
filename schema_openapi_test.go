@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	opts "github.com/goliatone/opts"
-	openapi "github.com/goliatone/opts/internal/schema/openapi"
+	openapi "github.com/goliatone/opts/schema/openapi"
 )
 
 func TestOpenAPIGeneratorIntegration(t *testing.T) {

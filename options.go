@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	openapi "github.com/goliatone/opts/internal/schema/openapi"
 )
 
 // New constructs an Options wrapper around the provided value.
@@ -169,17 +167,6 @@ func (o *Options[T]) WithSchemaGenerator(generator SchemaGenerator) *Options[T] 
 	clone := o.Clone()
 	clone.cfg.schemaGenerator = generator
 	return clone
-}
-
-// WithOpenAPISchema configures the wrapper to emit OpenAPI-compatible JSON Schema documents.
-func WithOpenAPISchema() Option {
-	return WithSchemaGenerator(openapi.NewGenerator())
-}
-
-// NewOpenAPISchemaGenerator exposes the built-in OpenAPI generator for callers that prefer
-// direct access without using functional options.
-func NewOpenAPISchemaGenerator() SchemaGenerator {
-	return openapi.NewGenerator()
 }
 
 func splitPath(path string) ([]string, error) {
