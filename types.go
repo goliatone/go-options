@@ -20,6 +20,7 @@ type RuleContext struct {
 	Now      *time.Time
 	Args     map[string]any
 	Metadata map[string]any
+	Scope    string
 }
 
 func (ctx RuleContext) withDefaultNow() RuleContext {
@@ -44,6 +45,13 @@ func (ctx RuleContext) withDefaultMaps() RuleContext {
 		ctx.Metadata = map[string]any{}
 	}
 	return ctx
+}
+
+func (ctx RuleContext) scopeLabel() string {
+	if ctx.Scope == "" {
+		return "unknown"
+	}
+	return ctx.Scope
 }
 
 // Evaluator executes expressions against a rule context.
@@ -78,6 +86,7 @@ type optionsConfig struct {
 	evaluator    Evaluator
 	programCache ProgramCache
 	functions    *FunctionRegistry
+	logger       EvaluatorLogger
 }
 
 func applyOptions(opts []Option) optionsConfig {
@@ -111,4 +120,11 @@ func (o *Options[T]) programCache() ProgramCache {
 
 func (o *Options[T]) functionRegistry() *FunctionRegistry {
 	return o.cfg.functions
+}
+
+func (o *Options[T]) evaluatorLogger() EvaluatorLogger {
+	if o.cfg.logger != nil {
+		return o.cfg.logger
+	}
+	return noopEvaluatorLogger{}
 }

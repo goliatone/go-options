@@ -42,6 +42,26 @@ func WithEvaluator(e Evaluator) Option {
 	}
 }
 
+// Clone returns a shallow copy of the Options wrapper preserving configuration.
+func (o *Options[T]) Clone() *Options[T] {
+	if o == nil {
+		return nil
+	}
+	clone := *o
+	return &clone
+}
+
+// WithValue returns a cloned wrapper whose Value field is set to value, leaving
+// the original untouched.
+func (o *Options[T]) WithValue(value T) *Options[T] {
+	if o == nil {
+		return &Options[T]{Value: value}
+	}
+	clone := o.Clone()
+	clone.Value = value
+	return clone
+}
+
 // Validate invokes the Validate method on the wrapped value when present.
 func (o *Options[T]) Validate() error {
 	return validateValue(o.Value)
