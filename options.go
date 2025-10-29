@@ -129,10 +129,44 @@ func (o *Options[T]) Set(path string, value any) error {
 	return nil
 }
 
-// Schema returns a read-only descriptor of the wrapped value.
-func (o *Options[T]) Schema() Schema {
-	fields := deriveSchema(any(o.Value), "")
-	return Schema{Fields: fields}
+// Schema returns a schema document for the wrapped value.
+func (o *Options[T]) Schema() (SchemaDocument, error) {
+	generator := o.schemaGenerator()
+	var snapshot any
+	if o != nil {
+		snapshot = any(o.Value)
+	}
+	doc, err := generator.Generate(snapshot)
+	if err != nil {
+		return SchemaDocument{}, err
+	}
+	if doc.Format == "" {
+		doc.Format = SchemaFormatDescriptors
+	}
+	if doc.Document == nil {
+		doc.Document = []FieldDescriptor{}
+	}
+	return doc, nil
+}
+
+// MustSchema generates a schema document and panics on error.
+func (o *Options[T]) MustSchema() SchemaDocument {
+	doc, err := o.Schema()
+	if err != nil {
+		panic(fmt.Sprintf("opts: schema generation failed: %v", err))
+	}
+	return doc
+}
+
+// WithSchemaGenerator returns a cloned wrapper configured with generator.
+// Passing a nil generator removes any custom generator and falls back to the default.
+func (o *Options[T]) WithSchemaGenerator(generator SchemaGenerator) *Options[T] {
+	if o == nil {
+		return &Options[T]{cfg: optionsConfig{schemaGenerator: generator}}
+	}
+	clone := o.Clone()
+	clone.cfg.schemaGenerator = generator
+	return clone
 }
 
 func splitPath(path string) ([]string, error) {
