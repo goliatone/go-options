@@ -61,7 +61,7 @@ func (e *celEvaluator) Evaluate(ctx RuleContext, expression string) (any, error)
 	}
 	out, _, err := program.program.Eval(e.activation(ctx, snapshot))
 	if err != nil {
-		return nil, wrapEvaluatorError("cel", err)
+		return nil, wrapEvaluationError("cel", expression, ctx.scopeLabel(), err)
 	}
 	return out.Value(), nil
 }
@@ -90,19 +90,19 @@ func (e *celEvaluator) loadOrCompile(expression string, snapshot map[string]any)
 
 	env, err := e.buildEnv(snapshot)
 	if err != nil {
-		return nil, wrapEvaluatorError("cel", err)
+		return nil, wrapEvaluationError("cel", expression, "", err)
 	}
 	ast, issues := env.Parse(expression)
 	if issues != nil && issues.Err() != nil {
-		return nil, wrapEvaluatorError("cel", issues.Err())
+		return nil, wrapEvaluationError("cel", expression, "", issues.Err())
 	}
 	checked, issues := env.Check(ast)
 	if issues != nil && issues.Err() != nil {
-		return nil, wrapEvaluatorError("cel", issues.Err())
+		return nil, wrapEvaluationError("cel", expression, "", issues.Err())
 	}
 	prg, err := env.Program(checked)
 	if err != nil {
-		return nil, wrapEvaluatorError("cel", err)
+		return nil, wrapEvaluationError("cel", expression, "", err)
 	}
 
 	bundle := &celProgram{
@@ -167,7 +167,7 @@ func (r *celCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	}
 	out, _, err := program.program.Eval(r.evaluator.activation(ctx, snapshot))
 	if err != nil {
-		return nil, wrapEvaluatorError("cel", err)
+		return nil, wrapEvaluationError("cel", r.expression, ctx.scopeLabel(), err)
 	}
 	return out.Value(), nil
 }

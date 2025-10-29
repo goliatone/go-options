@@ -84,7 +84,7 @@ func (e *jsEvaluator) loadOrCompile(expression string) (*goja.Program, error) {
 	}
 	program, err := goja.Compile("", e.wrapExpression(expression), false)
 	if err != nil {
-		return nil, wrapEvaluatorError("js", err)
+		return nil, wrapEvaluationError("js", expression, "", err)
 	}
 	if e.cache != nil {
 		e.cache.Set(expression, program)
@@ -98,13 +98,13 @@ func (e *jsEvaluator) run(ctx RuleContext, expression string, program *goja.Prog
 	if program != nil {
 		value, err := vm.RunProgram(program)
 		if err != nil {
-			return nil, wrapEvaluatorError("js", err)
+			return nil, wrapEvaluationError("js", expression, ctx.scopeLabel(), err)
 		}
 		return value.Export(), nil
 	}
 	value, err := vm.RunString(e.wrapExpression(expression))
 	if err != nil {
-		return nil, wrapEvaluatorError("js", err)
+		return nil, wrapEvaluationError("js", expression, ctx.scopeLabel(), err)
 	}
 	return value.Export(), nil
 }

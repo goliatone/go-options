@@ -54,7 +54,7 @@ func (e *exprEvaluator) Evaluate(ctx RuleContext, expression string) (any, error
 	if e.cache == nil {
 		result, err := exprlang.Eval(expression, env)
 		if err != nil {
-			return nil, wrapEvaluatorError("expr", err)
+			return nil, wrapEvaluationError("expr", expression, ctx.scopeLabel(), err)
 		}
 		return result, nil
 	}
@@ -64,7 +64,7 @@ func (e *exprEvaluator) Evaluate(ctx RuleContext, expression string) (any, error
 	}
 	result, err := exprlang.Run(program, env)
 	if err != nil {
-		return nil, wrapEvaluatorError("expr", err)
+		return nil, wrapEvaluationError("expr", expression, ctx.scopeLabel(), err)
 	}
 	return result, nil
 }
@@ -103,7 +103,7 @@ func (e *exprEvaluator) loadOrCompile(expression string) (*exprvm.Program, error
 	}
 	program, err := exprlang.Compile(expression, options...)
 	if err != nil {
-		return nil, wrapEvaluatorError("expr", err)
+		return nil, wrapEvaluationError("expr", expression, "", err)
 	}
 	if e.cache != nil {
 		e.cache.Set(expression, program)
@@ -128,7 +128,7 @@ func (r *exprCompiledRule) Evaluate(ctx RuleContext) (any, error) {
 	env := r.evaluator.environment(ctx)
 	result, err := exprlang.Run(r.program, env)
 	if err != nil {
-		return nil, wrapEvaluatorError("expr", err)
+		return nil, wrapEvaluationError("expr", r.expression, ctx.scopeLabel(), err)
 	}
 	return result, nil
 }
