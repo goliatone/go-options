@@ -122,15 +122,50 @@ enabled, _ := wrapper.Get("channels.email.enabled")
 
 _ = wrapper.Set("channels.push.enabled", true) // lazily creates intermediate maps
 
-schema := wrapper.Schema()
-for _, field := range schema.Fields {
+doc := wrapper.MustSchema()
+fields, ok := doc.Document.([]opts.FieldDescriptor)
+if !ok {
+	log.Fatalf("unexpected schema payload %T", doc.Document)
+}
+for _, field := range fields {
 	fmt.Printf("%s => %s\n", field.Path, field.Type)
 }
+
+openAPIDoc, err := wrapper.WithSchemaGenerator(
+	opts.NewOpenAPISchemaGenerator(),
+).Schema()
+if err != nil {
+	log.Fatalf("openapi schema: %v", err)
+}
+fmt.Println(openAPIDoc.Format) // "openapi"
 ```
+
 Key details:
 - `Get` traverses maps with string keys, exported struct fields, or fields tagged with `json:"name"`. It also supports slice/array indices (`items.0.id`).
 - `Set` mutates map backed snapshots and lazily creates intermediate maps. Struct backed values are read only; attempting to call `Set` with a struct snapshot returns an error.
-- `Schema` emits a flattened list of paths inferred from the snapshot. Basic primitives (`bool`, `string`, numeric types, slices) are normalised, for example `[]string` becomes `[]string`, and `int32` is reported as `int`. Unknown or composite types fall back to their Go type names.
+- `Schema()` returns a `SchemaDocument` describing the wrapped value. The default generator emits flattened `FieldDescriptor` paths. Pass `opts.WithSchemaGenerator(...)` (or the helper from `internal/schema/openapi`) to swap in alternate representations such as OpenAPI/JSON Schema.
+
+### Schema Generators
+
+`Options.Schema()` delegates to a configurable `SchemaGenerator`. The default generator produces a slice of `FieldDescriptor` values (format `descriptors`). To generate OpenAPI compatible schemas:
+
+```go
+wrapper := opts.New(snapshot, opts.WithOpenAPISchema())
+doc, _ := wrapper.Schema()
+if doc.Format == opts.SchemaFormatOpenAPI {
+	fmt.Printf("properties: %#v\n", doc.Document)
+}
+```
+
+Custom generators implement:
+
+```go
+type SchemaGenerator interface {
+    Generate(value any) (opts.SchemaDocument, error)
+}
+```
+
+Generators must be safe for concurrent use and handle `nil` inputs by returning an empty schema (usually `{ "type": "null" }`). Use `opts.WithSchemaGenerator(myGenerator)` or `opts.Options.WithSchemaGenerator(...)` to attach custom implementations per wrapper.
 
 ## Custom Functions & Shared Registry
 
