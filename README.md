@@ -195,11 +195,3 @@ logger := opts.EvaluatorLoggerFunc(func(event opts.EvaluatorLogEvent) {
 
 wrapper := opts.New(snapshot, opts.WithEvaluatorLogger(logger))
 ```
-
-## Stability Guarantees
-
-The exported surface sticks to functional options such as `WithEvaluator`, leaving room for additive hooks like `WithProgramCache` without breaking callers. `Options[T]`, `Response[T]`, and `RuleContext` provide the baseline API; future fields will default gracefully (e.g., `RuleContext.Now`) so existing code keeps compiling.
-
-## Future Work
-
-See [docs/TDD_OPTIONS.md](docs/TDD_OPTIONS.md) for the roadmap covering additional evaluators, caching hooks, dynamic access helpers, and schema generation. The public API revolves around functional options like `WithEvaluator`, `WithProgramCache`, and `WithFunctionRegistry` to keep future enhancements backwards compatible. All new capabilities will remain additive to preserve the stability guarantees.
