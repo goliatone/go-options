@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 
 	opts "github.com/goliatone/opts"
+	openapi "github.com/goliatone/opts/internal/schema/openapi"
 )
 
 // ServerConfig holds server settings.
@@ -131,14 +133,30 @@ func main() {
 		},
 	}
 	schemaWrapper := opts.New(configMap)
-	schema := schemaWrapper.Schema()
+	schemaDoc := schemaWrapper.MustSchema()
+	fields, ok := schemaDoc.Document.([]opts.FieldDescriptor)
+	if !ok {
+		log.Fatalf("unexpected schema document type %T", schemaDoc.Document)
+	}
 
-	fmt.Printf("   Total fields: %d\n", len(schema.Fields))
+	fmt.Printf("   Total fields: %d\n", len(fields))
 	fmt.Println("   Fields:")
-	for _, field := range schema.Fields {
+	for _, field := range fields {
 		fmt.Printf("     %s => %s\n", field.Path, field.Type)
 	}
 	fmt.Println()
+
+	openAPISchemaWrapper := opts.New(configMap, openapi.Option())
+	openAPIDoc, err := openAPISchemaWrapper.Schema()
+	if err != nil {
+		log.Fatalf("failed to generate OpenAPI schema: %v", err)
+	}
+	openAPIJSON, err := json.MarshalIndent(openAPIDoc.Document, "   ", "  ")
+	if err != nil {
+		log.Fatalf("failed to marshal OpenAPI schema: %v", err)
+	}
+	fmt.Println("   OpenAPI schema:")
+	fmt.Printf("%s\n\n", openAPIJSON)
 
 	// 5. Dynamic access with Get/Set
 	fmt.Println("5. Dynamic access (Get/Set)")
