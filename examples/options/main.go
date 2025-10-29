@@ -1,159 +1,185 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
 	opts "github.com/goliatone/opts"
-	layering "github.com/goliatone/opts/layering"
 )
 
-// Example: Multi-environment web service configuration
-// This demonstrates a realistic scenario where configuration is layered:
-// 1. Base defaults (development environment)
-// 2. Production overrides (applied when deploying to prod)
-// 3. Runtime overrides (from feature flags or admin console)
+// ServerConfig holds server settings.
+type ServerConfig struct {
+	Port         int    `json:"port"`
+	Host         string `json:"host"`
+	ReadTimeout  int    `json:"readTimeout"`
+	WriteTimeout int    `json:"writeTimeout"`
+	Enabled      bool   `json:"enabled"`
+}
 
+// Validate ensures the server configuration is valid.
+func (s ServerConfig) Validate() error {
+	if !s.Enabled {
+		return errors.New("server is disabled")
+	}
+	if s.Port < 1 || s.Port > 65535 {
+		return fmt.Errorf("port %d out of range (1-65535)", s.Port)
+	}
+	if s.Host == "" {
+		return errors.New("host must not be empty")
+	}
+	if s.ReadTimeout < 0 {
+		return errors.New("readTimeout must be non-negative")
+	}
+	if s.WriteTimeout < 0 {
+		return errors.New("writeTimeout must be non-negative")
+	}
+	return nil
+}
+
+// AppConfig holds application configuration.
+type AppConfig struct {
+	Server   ServerConfig      `json:"server"`
+	Database map[string]any    `json:"database"`
+	Features map[string]any    `json:"features"`
+	Logging  map[string]string `json:"logging"`
+}
+
+// Example demonstrating defaults, validation, layering, and schema inspection.
 func main() {
-	// Layer 1: Base defaults for development environment
-	baseDefaults := map[string]any{
-		"Server": map[string]any{
-			"Port":         8080,
-			"Host":         "localhost",
-			"ReadTimeout":  30,
-			"WriteTimeout": 30,
-		},
-		"Database": map[string]any{
-			"Host":            "localhost",
-			"Port":            5432,
-			"Name":            "myapp_dev",
-			"MaxConnections":  10,
-			"ConnectionRetry": true,
-		},
-		"Features": map[string]any{
-			"RateLimiting": map[string]any{
-				"Enabled":        false,
-				"RequestsPerMin": 100,
-			},
-			"Authentication": map[string]any{
-				"OAuth":   false,
-				"JWT":     true,
-				"TokenTTL": 3600,
-			},
-			"Caching": map[string]any{
-				"Enabled": false,
-				"TTL":     300,
-			},
-		},
-		"Logging": map[string]any{
-			"Level":  "debug",
-			"Format": "json",
-		},
+	fmt.Println("=== go-options Example ===")
+
+	// 1. Defaults
+	fmt.Println("1. Applying defaults")
+	defaults := ServerConfig{
+		Port:         8080,
+		Host:         "localhost",
+		ReadTimeout:  30,
+		WriteTimeout: 30,
+		Enabled:      true,
 	}
+	current := opts.ApplyDefaults(ServerConfig{}, defaults)
+	fmt.Printf("   Applied: %+v\n\n", current)
 
-	// Layer 2: Production environment overrides
-	productionOverrides := map[string]any{
-		"Server": map[string]any{
-			"Host":         "0.0.0.0",
-			"ReadTimeout":  60,
-			"WriteTimeout": 60,
-		},
-		"Database": map[string]any{
-			"Host":           "db.production.internal",
-			"Name":           "myapp_prod",
-			"MaxConnections": 100,
-		},
-		"Features": map[string]any{
-			"RateLimiting": map[string]any{
-				"Enabled":        true,
-				"RequestsPerMin": 1000,
-			},
-			"Caching": map[string]any{
-				"Enabled": true,
-				"TTL":     600,
-			},
-		},
-		"Logging": map[string]any{
-			"Level": "info",
-		},
+	// 2. Validation
+	fmt.Println("2. Validation")
+	validConfig := ServerConfig{
+		Port:         8080,
+		Host:         "localhost",
+		ReadTimeout:  30,
+		WriteTimeout: 30,
+		Enabled:      true,
 	}
-
-	// Layer 3: Runtime overrides (feature flags, emergency toggles)
-	runtimeOverrides := map[string]any{
-		"Features": map[string]any{
-			"RateLimiting": map[string]any{
-				"RequestsPerMin": 500, // Reduced due to high load
-			},
-			"Authentication": map[string]any{
-				"OAuth": true, // New feature enabled
-			},
-		},
-	}
-
-	// Merge layers: runtime > production > defaults
-	config := layering.MergeLayers(runtimeOverrides, productionOverrides, baseDefaults)
-	wrapper := opts.New(config, opts.WithEvaluator(opts.NewExprEvaluator()))
-
-	// Use case 1: Check if rate limiting should be applied
-	rateLimitResp, err := wrapper.Evaluate("Features.RateLimiting.Enabled")
+	validWrapper, err := opts.Load(validConfig)
 	if err != nil {
-		log.Fatalf("Failed to evaluate rate limiting: %v", err)
+		fmt.Printf("   Valid config failed: %v\n", err)
+	} else {
+		fmt.Println("   Valid config passed validation")
 	}
-	rateLimitEnabled := rateLimitResp.Value.(bool)
 
-	// Use case 2: Get rate limit value for middleware configuration
-	requestsPerMin, err := wrapper.Get("Features.RateLimiting.RequestsPerMin")
+	invalidConfig := ServerConfig{
+		Port:         8080,
+		Host:         "localhost",
+		ReadTimeout:  30,
+		WriteTimeout: 30,
+		Enabled:      false, // Will fail validation
+	}
+	_, err = opts.Load(invalidConfig)
 	if err != nil {
-		log.Fatalf("Failed to get rate limit value: %v", err)
+		fmt.Printf("   Invalid config failed as expected: %v\n\n", err)
 	}
 
-	// Use case 3: Check authentication strategy
-	oauthEnabled, _ := wrapper.Get("Features.Authentication.OAuth")
-	jwtEnabled, _ := wrapper.Get("Features.Authentication.JWT")
-
-	// Use case 4: Validate caching configuration
-	cachingResp, err := wrapper.Evaluate("Features.Caching.Enabled && Features.Caching.TTL > 0")
-	if err != nil {
-		log.Fatalf("Failed to evaluate caching config: %v", err)
+	// 3. Layering
+	fmt.Println("3. Layering configuration")
+	baseConfig := map[string]any{
+		"timeout": 30,
+		"retries": 3,
+		"debug":   true,
 	}
-	cachingValid := cachingResp.Value.(bool)
+	prodOverrides := map[string]any{
+		"timeout": 60,
+		"debug":   false,
+	}
+	userOverrides := map[string]any{
+		"retries": 5,
+	}
 
-	// Use case 5: Database connection string construction
-	dbHost, _ := wrapper.Get("Database.Host")
-	dbPort, _ := wrapper.Get("Database.Port")
-	dbName, _ := wrapper.Get("Database.Name")
-	dbMaxConns, _ := wrapper.Get("Database.MaxConnections")
+	wrapper := opts.New(baseConfig)
+	merged := wrapper.LayerWith(userOverrides, prodOverrides)
 
-	// Display the final merged configuration
-	fmt.Println("=== Web Service Configuration ===")
-	fmt.Printf("\nServer:\n")
-	serverHost, _ := wrapper.Get("Server.Host")
-	serverPort, _ := wrapper.Get("Server.Port")
-	fmt.Printf("  Address: %s:%v\n", serverHost, serverPort)
+	timeout, _ := merged.Get("timeout")
+	retries, _ := merged.Get("retries")
+	debug, _ := merged.Get("debug")
+	fmt.Printf("   Merged config: timeout=%v, retries=%v, debug=%v\n\n", timeout, retries, debug)
 
-	fmt.Printf("\nDatabase:\n")
-	fmt.Printf("  Connection: %s:%v/%s\n", dbHost, dbPort, dbName)
-	fmt.Printf("  Max Connections: %v\n", dbMaxConns)
+	// 4. Schema inspection
+	fmt.Println("4. Schema inspection")
+	configMap := map[string]any{
+		"server": map[string]any{
+			"host": "localhost",
+			"port": 8080,
+		},
+		"database": map[string]any{
+			"host":       "localhost",
+			"port":       5432,
+			"maxRetries": 3,
+			"ssl":        true,
+		},
+		"features": map[string]any{
+			"enabled": true,
+			"flags":   []any{"feature1", "feature2"},
+		},
+	}
+	schemaWrapper := opts.New(configMap)
+	schema := schemaWrapper.Schema()
 
-	fmt.Printf("\nFeatures:\n")
-	fmt.Printf("  Rate Limiting: %v (%v req/min)\n", rateLimitEnabled, requestsPerMin)
-	fmt.Printf("  Authentication: OAuth=%v, JWT=%v\n", oauthEnabled, jwtEnabled)
-	fmt.Printf("  Caching: Valid=%v\n", cachingValid)
-
-	loggingLevel, _ := wrapper.Get("Logging.Level")
-	fmt.Printf("\nLogging Level: %s\n", loggingLevel)
-
-	// Demonstrate schema inspection for debugging/documentation
-	schema := wrapper.Schema()
-	fmt.Printf("\nTotal configuration fields: %d\n", len(schema.Fields))
-
-	// Example: Find all feature flags
-	fmt.Println("\nFeature flags:")
+	fmt.Printf("   Total fields: %d\n", len(schema.Fields))
+	fmt.Println("   Fields:")
 	for _, field := range schema.Fields {
-		if len(field.Path) >= 17 && field.Path[:9] == "Features." &&
-			len(field.Path) >= 7 && field.Path[len(field.Path)-7:] == "Enabled" {
-			value, _ := wrapper.Get(field.Path)
-			fmt.Printf("  %s: %v\n", field.Path, value)
-		}
+		fmt.Printf("     %s => %s\n", field.Path, field.Type)
 	}
+	fmt.Println()
+
+	// 5. Dynamic access with Get/Set
+	fmt.Println("5. Dynamic access (Get/Set)")
+	dynamicWrapper := opts.New(map[string]any{
+		"api": map[string]any{
+			"endpoint": "https://api.example.com",
+			"version":  "v1",
+		},
+	})
+
+	endpoint, _ := dynamicWrapper.Get("api.endpoint")
+	version, _ := dynamicWrapper.Get("api.version")
+	fmt.Printf("   Get api.endpoint: %v\n", endpoint)
+	fmt.Printf("   Get api.version: %v\n", version)
+
+	err = dynamicWrapper.Set("api.timeout", 30)
+	if err != nil {
+		log.Fatalf("Failed to set api.timeout: %v", err)
+	}
+	timeout, _ = dynamicWrapper.Get("api.timeout")
+	fmt.Printf("   Set api.timeout: %v\n\n", timeout)
+
+	// 6. Rule evaluation
+	fmt.Println("6. Rule evaluation")
+	evalWrapper := opts.New(map[string]any{
+		"features": map[string]any{
+			"newUI":     true,
+			"darkMode":  false,
+			"analytics": true,
+		},
+	})
+
+	result, err := evalWrapper.Evaluate("features.newUI && features.analytics")
+	if err != nil {
+		log.Fatalf("Failed to evaluate: %v", err)
+	}
+	fmt.Printf("   Expression: features.newUI && features.analytics\n")
+	fmt.Printf("   Result: %v\n", result.Value)
+
+	// Verify validWrapper is used
+	serverPort, _ := validWrapper.Get("Port")
+	fmt.Printf("\n7. Validated config in use\n")
+	fmt.Printf("   Server port: %v\n", serverPort)
 }
