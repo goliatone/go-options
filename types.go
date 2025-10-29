@@ -9,6 +9,30 @@ type Options[T any] struct {
 	cfg optionsConfig
 }
 
+// SchemaFormat identifies the representation a schema document encodes.
+type SchemaFormat string
+
+const (
+	// SchemaFormatDescriptors represents the flattened field descriptors.
+	SchemaFormatDescriptors SchemaFormat = "descriptors"
+	// SchemaFormatOpenAPI represents OpenAPI-compatible JSON Schema documents.
+	SchemaFormatOpenAPI SchemaFormat = "openapi"
+)
+
+// SchemaDocument encapsulates a generated schema output alongside its format
+// identifier. Implementations must ensure Document is JSON-serialisable.
+type SchemaDocument struct {
+	Format   SchemaFormat
+	Document any
+}
+
+// SchemaGenerator transforms an options value into a schema document. All
+// implementations MUST be safe for concurrent use and handle nil inputs by
+// returning an empty schema document.
+type SchemaGenerator interface {
+	Generate(value any) (SchemaDocument, error)
+}
+
 // Response stores a typed result produced by an evaluator.
 type Response[T any] struct {
 	Value T
@@ -83,10 +107,11 @@ func (f compileOptionFunc) applyCompileOption(cfg *compileConfig) {
 type Option func(*optionsConfig)
 
 type optionsConfig struct {
-	evaluator    Evaluator
-	programCache ProgramCache
-	functions    *FunctionRegistry
-	logger       EvaluatorLogger
+	evaluator       Evaluator
+	programCache    ProgramCache
+	functions       *FunctionRegistry
+	logger          EvaluatorLogger
+	schemaGenerator SchemaGenerator
 }
 
 func applyOptions(opts []Option) optionsConfig {
@@ -127,4 +152,21 @@ func (o *Options[T]) evaluatorLogger() EvaluatorLogger {
 		return o.cfg.logger
 	}
 	return noopEvaluatorLogger{}
+}
+
+// WithSchemaGenerator configures a custom schema generator implementation.
+func WithSchemaGenerator(generator SchemaGenerator) Option {
+	return func(cfg *optionsConfig) {
+		cfg.schemaGenerator = generator
+	}
+}
+
+func (o *Options[T]) schemaGenerator() SchemaGenerator {
+	if o == nil {
+		return DefaultSchemaGenerator()
+	}
+	if o.cfg.schemaGenerator != nil {
+		return o.cfg.schemaGenerator
+	}
+	return DefaultSchemaGenerator()
 }
