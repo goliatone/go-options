@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	layering "github.com/goliatone/go-options/layering"
+	layering "github.com/goliatone/opts/layering"
 )
 
 var errInvalid = errors.New("invalid value")

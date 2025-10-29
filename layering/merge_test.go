@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 )
 
@@ -77,11 +76,7 @@ type layeringExtras struct {
 
 func loadLayeringFixture(t *testing.T, name string) layeringFixture {
 	t.Helper()
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatalf("unable to resolve caller for fixture %q", name)
-	}
-	path := filepath.Join(filepath.Dir(file), "testdata", name)
+	path := filepath.Join("testdata", name)
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read layering fixture %q: %v", name, err)
