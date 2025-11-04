@@ -1,0 +1,89 @@
+{
+  "snapshot": {
+    "features": {
+      "flags": [
+        {
+          "enabled": true,
+          "name": "beta"
+        },
+        {
+          "enabled": false,
+          "name": "darkMode"
+        }
+      ]
+    },
+    "server": {
+      "hosts": [
+        "us-east-1",
+        "us-west-2"
+      ],
+      "port": 8080
+    }
+  },
+  "expect": {
+    "document": {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Options Schema",
+        "version": "1.0.0"
+      },
+      "paths": {
+        "/config": {
+          "post": {
+            "operationId": "post:/config",
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "features": {
+                        "type": "object",
+                        "properties": {
+                          "flags": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "server": {
+                        "type": "object",
+                        "properties": {
+                          "hosts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "port": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "204": {
+                "description": "OK"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

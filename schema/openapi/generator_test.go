@@ -10,13 +10,62 @@ import (
 	opts "github.com/goliatone/opts"
 )
 
+func TestNewGeneratorOptions(t *testing.T) {
+	custom := NewGenerator(
+		WithOpenAPIVersion("3.1.0"),
+		WithInfo("Custom Service", "2.0.0", WithInfoDescription("custom schema")),
+		WithOperation("/settings", "PUT", "updateSettings", WithOperationSummary("Update settings")),
+		WithContentType("application/x-www-form-urlencoded"),
+		WithResponse("201", "Created"),
+	)
+
+	internal, ok := custom.(generator)
+	if !ok {
+		t.Fatalf("expected generator implementation, got %T", custom)
+	}
+
+	if got := internal.config.openAPIVersion; got != "3.1.0" {
+		t.Fatalf("expected openapi version 3.1.0, got %q", got)
+	}
+	if got := internal.config.info.Title; got != "Custom Service" {
+		t.Fatalf("expected info title Custom Service, got %q", got)
+	}
+	if got := internal.config.info.Version; got != "2.0.0" {
+		t.Fatalf("expected info version 2.0.0, got %q", got)
+	}
+	if got := internal.config.info.Description; got != "custom schema" {
+		t.Fatalf("expected info description custom schema, got %q", got)
+	}
+	if got := internal.config.operation.Path; got != "/settings" {
+		t.Fatalf("expected operation path /settings, got %q", got)
+	}
+	if got := internal.config.operation.Method; got != "put" {
+		t.Fatalf("expected method put, got %q", got)
+	}
+	if got := internal.config.operation.OperationID; got != "updateSettings" {
+		t.Fatalf("expected operation id updateSettings, got %q", got)
+	}
+	if got := internal.config.operation.Summary; got != "Update settings" {
+		t.Fatalf("expected operation summary Update settings, got %q", got)
+	}
+	if got := internal.config.contentType; got != "application/x-www-form-urlencoded" {
+		t.Fatalf("expected content type application/x-www-form-urlencoded, got %q", got)
+	}
+	if got := internal.config.responses["201"].Description; got != "Created" {
+		t.Fatalf("expected response description Created, got %q", got)
+	}
+	if _, exists := internal.config.responses["204"]; !exists {
+		t.Fatalf("expected default 204 response to remain configured")
+	}
+}
+
 func TestGeneratorFixtures(t *testing.T) {
 	t.Parallel()
 
 	cases := []string{
-		"schema_openapi_basic.json",
-		"schema_openapi_nested.json",
-		"schema_openapi_empty_collections.json",
+		"document_basic.json",
+		"document_nested.json",
+		"document_empty_collections.json",
 	}
 
 	for _, name := range cases {
@@ -39,8 +88,8 @@ func TestGeneratorFixtures(t *testing.T) {
 				t.Fatalf("expected schema document map[string]any, got %T", doc.Document)
 			}
 
-			if !reflect.DeepEqual(fx.Expect.Schema, got) {
-				t.Fatalf("schema mismatch\nwant: %#v\ngot:  %#v", fx.Expect.Schema, got)
+			if !reflect.DeepEqual(fx.Expect.Document, got) {
+				t.Fatalf("schema mismatch\nwant: %#v\ngot:  %#v", fx.Expect.Document, got)
 			}
 		})
 	}
@@ -60,15 +109,19 @@ func TestGeneratorNil(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected map document, got %T", doc.Document)
 	}
-	if schema["type"] != "null" {
-		t.Fatalf("expected type null, got %v", schema["type"])
+	if schema["openapi"] == "" {
+		t.Fatalf("expected openapi version, got %v", schema["openapi"])
+	}
+	paths, ok := schema["paths"].(map[string]any)
+	if !ok || len(paths) == 0 {
+		t.Fatalf("expected paths definition, got %v", schema["paths"])
 	}
 }
 
 type fixture struct {
 	Snapshot map[string]any `json:"snapshot"`
 	Expect   struct {
-		Schema map[string]any `json:"schema"`
+		Document map[string]any `json:"document"`
 	} `json:"expect"`
 }
 
