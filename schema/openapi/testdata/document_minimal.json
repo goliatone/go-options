@@ -1,0 +1,48 @@
+{
+  "sample": "document_minimal",
+  "expect": {
+    "document": {
+      "info": {
+        "title": "Options Schema",
+        "version": "1.0.0"
+      },
+      "openapi": "3.0.3",
+      "paths": {
+        "/config": {
+          "post": {
+            "operationId": "post:/config",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "retries": {
+                        "type": "integer"
+                      },
+                      "threshold": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "204": {
+                "description": "OK"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "sample": "document_arrays",
+  "expect": {
+    "document": {
+      "components": {
+        "schemas": {
+          "Root_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        }
+      },
+      "info": {
+        "title": "Options Schema",
+        "version": "1.0.0"
+      },
+      "openapi": "3.0.3",
+      "paths": {
+        "/config": {
+          "post": {
+            "operationId": "post:/config",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "ids": {
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      "matrix": {
+                        "items": {
+                          "$ref": "#/components/schemas/Root_ids"
+                        },
+                        "type": "array"
+                      },
+                      "services": {
+                        "items": {
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "204": {
+                "description": "OK"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

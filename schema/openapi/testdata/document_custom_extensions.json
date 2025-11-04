@@ -1,0 +1,137 @@
+{
+  "sample": "document_custom_extensions",
+  "expect": {
+    "document": {
+      "components": {
+        "schemas": {
+          "Root_credentials": {
+            "properties": {
+              "password": {
+                "minLength": 12,
+                "type": "string",
+                "x-formgen": {
+                  "widget": "password"
+                }
+              },
+              "username": {
+                "default": "admin",
+                "maxLength": 32,
+                "minLength": 3,
+                "type": "string",
+                "x-formgen": {
+                  "label": "Username",
+                  "placeholder": "Enter username"
+                }
+              }
+            },
+            "required": [
+              "username"
+            ],
+            "type": "object"
+          }
+        }
+      },
+      "info": {
+        "title": "Options Schema",
+        "version": "1.0.0"
+      },
+      "openapi": "3.0.3",
+      "paths": {
+        "/config": {
+          "post": {
+            "operationId": "post:/config",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "credentials": {
+                        "properties": {
+                          "password": {
+                            "minLength": 12,
+                            "type": "string",
+                            "x-formgen": {
+                              "widget": "password"
+                            }
+                          },
+                          "username": {
+                            "default": "admin",
+                            "maxLength": 32,
+                            "minLength": 3,
+                            "type": "string",
+                            "x-formgen": {
+                              "label": "Username",
+                              "placeholder": "Enter username"
+                            }
+                          }
+                        },
+                        "required": [
+                          "username"
+                        ],
+                        "type": "object"
+                      },
+                      "mode": {
+                        "enum": [
+                          "active",
+                          "passive"
+                        ],
+                        "type": "string",
+                        "x-formgen": {
+                          "widget": "select"
+                        },
+                        "x-relationships": {
+                          "target": "Mode",
+                          "type": "belongsTo"
+                        }
+                      },
+                      "name": {
+                        "default": "api",
+                        "type": "string",
+                        "x-formgen": {
+                          "label": "Service Name",
+                          "placeholder": "Enter name"
+                        }
+                      },
+                      "replicas": {
+                        "items": {
+                          "$ref": "#/components/schemas/Root_credentials"
+                        },
+                        "type": "array"
+                      },
+                      "timeoutSecs": {
+                        "default": 30,
+                        "maximum": 120,
+                        "minimum": 1,
+                        "type": "integer",
+                        "x-formgen": {
+                          "hint": "Seconds until timeout"
+                        },
+                        "x-relationships": {
+                          "target": "Service",
+                          "type": "dependsOn"
+                        }
+                      }
+                    },
+                    "required": [
+                      "credentials",
+                      "name",
+                      "replicas",
+                      "timeoutSecs"
+                    ],
+                    "type": "object"
+                  }
+                }
+              },
+              "required": true
+            },
+            "responses": {
+              "204": {
+                "description": "OK"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

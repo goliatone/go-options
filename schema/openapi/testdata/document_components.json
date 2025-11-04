@@ -1,7 +1,22 @@
 {
-  "sample": "document_nested",
+  "sample": "document_components",
   "expect": {
     "document": {
+      "components": {
+        "schemas": {
+          "Root_primary": {
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "port": {
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        }
+      },
       "info": {
         "title": "Options Schema",
         "version": "1.0.0"
@@ -16,38 +31,25 @@
                 "application/json": {
                   "schema": {
                     "properties": {
-                      "features": {
+                      "primary": {
                         "properties": {
-                          "flags": {
-                            "items": {
-                              "properties": {
-                                "enabled": {
-                                  "type": "boolean"
-                                },
-                                "name": {
-                                  "type": "string"
-                                }
-                              },
-                              "type": "object"
-                            },
-                            "type": "array"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "server": {
-                        "properties": {
-                          "hosts": {
-                            "items": {
-                              "type": "string"
-                            },
-                            "type": "array"
+                          "host": {
+                            "type": "string"
                           },
                           "port": {
                             "type": "integer"
                           }
                         },
                         "type": "object"
+                      },
+                      "replicas": {
+                        "items": {
+                          "$ref": "#/components/schemas/Root_primary"
+                        },
+                        "type": "array"
+                      },
+                      "secondary": {
+                        "$ref": "#/components/schemas/Root_primary"
                       }
                     },
                     "type": "object"
