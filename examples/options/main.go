@@ -10,13 +10,13 @@ import (
 	openapi "github.com/goliatone/opts/schema/openapi"
 )
 
-// ServerConfig holds server settings.
+// ServerConfig holds server settings and demonstrates OpenAPI metadata tags.
 type ServerConfig struct {
-	Port         int    `json:"port"`
-	Host         string `json:"host"`
-	ReadTimeout  int    `json:"readTimeout"`
-	WriteTimeout int    `json:"writeTimeout"`
-	Enabled      bool   `json:"enabled"`
+	Port         int    `json:"port" default:"8080" minimum:"1" maximum:"65535" formgen:"label=HTTP Port" relationship:"type=belongsTo,target=Environment"`
+	Host         string `json:"host" default:"localhost" minLength:"3" formgen:"label=Host,placeholder=app.local"`
+	ReadTimeout  int    `json:"readTimeout" default:"30" minimum:"0" formgen:"hint=Seconds until read timeout"`
+	WriteTimeout int    `json:"writeTimeout" default:"30" minimum:"0"`
+	Enabled      bool   `json:"enabled" default:"true" formgen:"label=Enable server"`
 }
 
 // Validate ensures the server configuration is valid.
@@ -39,15 +39,30 @@ func (s ServerConfig) Validate() error {
 	return nil
 }
 
-// AppConfig holds application configuration.
-type AppConfig struct {
-	Server   ServerConfig      `json:"server"`
-	Database map[string]any    `json:"database"`
-	Features map[string]any    `json:"features"`
-	Logging  map[string]string `json:"logging"`
+// DatabaseConfig represents database configuration with constraint metadata.
+type DatabaseConfig struct {
+	Host       string `json:"host" default:"localhost" formgen:"label=Database Host"`
+	Port       int    `json:"port" default:"5432" minimum:"1024" maximum:"65535"`
+	MaxRetries int    `json:"maxRetries" default:"3" minimum:"0" maximum:"10" formgen:"hint=Automatic retry attempts"`
+	SSL        bool   `json:"ssl" default:"true"`
 }
 
-// Example demonstrating defaults, validation, layering, and schema inspection.
+// FeatureFlag defines a reusable component for feature flags.
+type FeatureFlag struct {
+	Key     string `json:"key" formgen:"label=Flag Key"`
+	Enabled bool   `json:"enabled" default:"false"`
+}
+
+// AppConfig holds application configuration with nested structs and arrays.
+type AppConfig struct {
+	Name        string         `json:"name" default:"options-service" formgen:"label=Service Name"`
+	Environment string         `json:"environment" default:"production" enum:"production,staging,development" formgen:"widget=select"`
+	Server      ServerConfig   `json:"server"`
+	Database    DatabaseConfig `json:"database"`
+	Flags       []FeatureFlag  `json:"flags"`
+}
+
+// Example demonstrating defaults, validation, layering, schema inspection, and OpenAPI export.
 func main() {
 	fmt.Println("=== go-options Example ===")
 
@@ -114,25 +129,9 @@ func main() {
 	debug, _ := merged.Get("debug")
 	fmt.Printf("   Merged config: timeout=%v, retries=%v, debug=%v\n\n", timeout, retries, debug)
 
-	// 4. Schema inspection
-	fmt.Println("4. Schema inspection")
-	configMap := map[string]any{
-		"server": map[string]any{
-			"host": "localhost",
-			"port": 8080,
-		},
-		"database": map[string]any{
-			"host":       "localhost",
-			"port":       5432,
-			"maxRetries": 3,
-			"ssl":        true,
-		},
-		"features": map[string]any{
-			"enabled": true,
-			"flags":   []any{"feature1", "feature2"},
-		},
-	}
-	schemaWrapper := opts.New(configMap)
+	// 4. Schema inspection (descriptor format)
+	fmt.Println("4. Schema inspection (descriptor format)")
+	schemaWrapper := opts.New(AppConfig{})
 	schemaDoc := schemaWrapper.MustSchema()
 	fields, ok := schemaDoc.Document.([]opts.FieldDescriptor)
 	if !ok {
@@ -146,8 +145,17 @@ func main() {
 	}
 	fmt.Println()
 
-	openAPISchemaWrapper := opts.New(configMap, openapi.Option())
-	openAPIDoc, err := openAPISchemaWrapper.Schema()
+	// 5. OpenAPI schema export with metadata-rich output
+	fmt.Println("5. OpenAPI schema export")
+	openAPIWrapper := opts.New(
+		AppConfig{},
+		openapi.Option(
+			openapi.WithInfo("Options Service Schema", "1.0.0", openapi.WithInfoDescription("Sample configuration for go-options")),
+			openapi.WithOperation("/config", "POST", "post:/config", openapi.WithOperationSummary("Submit configuration")),
+			openapi.WithContentType("application/json"),
+		),
+	)
+	openAPIDoc, err := openAPIWrapper.Schema()
 	if err != nil {
 		log.Fatalf("failed to generate OpenAPI schema: %v", err)
 	}
@@ -158,8 +166,8 @@ func main() {
 	fmt.Println("   OpenAPI schema:")
 	fmt.Printf("%s\n\n", openAPIJSON)
 
-	// 5. Dynamic access with Get/Set
-	fmt.Println("5. Dynamic access (Get/Set)")
+	// 6. Dynamic access with Get/Set
+	fmt.Println("6. Dynamic access (Get/Set)")
 	dynamicWrapper := opts.New(map[string]any{
 		"api": map[string]any{
 			"endpoint": "https://api.example.com",
@@ -179,8 +187,8 @@ func main() {
 	timeout, _ = dynamicWrapper.Get("api.timeout")
 	fmt.Printf("   Set api.timeout: %v\n\n", timeout)
 
-	// 6. Rule evaluation
-	fmt.Println("6. Rule evaluation")
+	// 7. Rule evaluation
+	fmt.Println("7. Rule evaluation")
 	evalWrapper := opts.New(map[string]any{
 		"features": map[string]any{
 			"newUI":     true,
@@ -198,6 +206,6 @@ func main() {
 
 	// Verify validWrapper is used
 	serverPort, _ := validWrapper.Get("Port")
-	fmt.Printf("\n7. Validated config in use\n")
+	fmt.Printf("\n8. Validated config in use\n")
 	fmt.Printf("   Server port: %v\n", serverPort)
 }
