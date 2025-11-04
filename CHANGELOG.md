@@ -1,5 +1,25 @@
 # Changelog
 
+# [0.2.0](https://github.com/goliatone/go-options/compare/v0.1.0...v0.2.0) - (2025-11-04)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.2.0 ([30ad193](https://github.com/goliatone/go-options/commit/30ad193d769e590585075cb5e2a962c7e08933dc))  - (goliatone)
+
+## <!-- 16 -->➕ Add
+
+- Schema generate OpenAPI 3 ([133991c](https://github.com/goliatone/go-options/commit/133991ca45f2bdc09504f45a37764c5a49b05f8e))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.1.0 ([d2146f0](https://github.com/goliatone/go-options/commit/d2146f0e0ede7db3cac92231f4f24abdb2506aa7))  - (goliatone)
+
+## <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Update examples ([60d2ce9](https://github.com/goliatone/go-options/commit/60d2ce9d69d029bc4b8652fcccc6862fcdf475e4))  - (goliatone)
+- Update tests ([f2b87dc](https://github.com/goliatone/go-options/commit/f2b87dc3b0ece0c49545a5cc20c70de668883a2f))  - (goliatone)
+- Update readme ([0726183](https://github.com/goliatone/go-options/commit/0726183f26bd5eca81776faf092c71542997ff5c))  - (goliatone)
+
 # [0.1.0](https://github.com/goliatone/go-options/tree/v0.1.0) - (2025-10-29)
 
 ## <!-- 1 -->🐛 Bug Fixes
