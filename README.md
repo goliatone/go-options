@@ -154,12 +154,26 @@ Key details:
 ```go
 import openapi "github.com/goliatone/opts/schema/openapi"
 
-wrapper := opts.New(snapshot, openapi.Option())
+wrapper := opts.New(snapshot, openapi.Option(
+	openapi.WithInfo("Config Service", "1.2.0"),
+	openapi.WithOperation("/config", "POST", "createConfig"),
+	openapi.WithResponse("204", "Configuration accepted"),
+))
 doc, _ := wrapper.Schema()
 if doc.Format == opts.SchemaFormatOpenAPI {
 	fmt.Printf("properties: %#v\n", doc.Document)
 }
 ```
+
+The OpenAPI generator is configurable through functional options:
+
+- `openapi.WithOpenAPIVersion("3.1.0")`
+- `openapi.WithInfo("Service Title", "version", openapi.WithInfoDescription("..."))`
+- `openapi.WithOperation("/path", "METHOD", "operationId", openapi.WithOperationSummary("..."))`
+- `openapi.WithContentType("application/json")`
+- `openapi.WithResponse("204", "Description")`
+
+See `docs/SCHEMA_TDD.md` for the design background and future roadmap for schema exports.
 
 Custom generators implement:
 
