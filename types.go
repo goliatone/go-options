@@ -7,6 +7,7 @@ type Options[T any] struct {
 	Value T
 
 	cfg optionsConfig
+	layers []layerSnapshot
 }
 
 // SchemaFormat identifies the representation a schema document encodes.
