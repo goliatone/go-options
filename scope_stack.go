@@ -73,6 +73,10 @@ func (s Scope) clone() Scope {
 	}
 }
 
+func (s Scope) isZero() bool {
+	return s.Name == "" && s.Label == "" && s.Priority == 0 && len(s.Metadata) == 0
+}
+
 // Layer pairs a scope definition with the snapshot captured for that scope.
 type Layer[T any] struct {
 	Scope      Scope
