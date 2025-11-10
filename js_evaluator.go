@@ -113,6 +113,9 @@ func (e *jsEvaluator) injectContext(vm *goja.Runtime, ctx RuleContext) {
 	vm.Set("now", ctx.timestamp())
 	vm.Set("args", ctx.Args)
 	vm.Set("metadata", ctx.Metadata)
+	if binding := ctx.scopeBinding(); binding != nil {
+		vm.Set("scope", binding)
+	}
 	if snapshot, ok := ctx.Snapshot.(map[string]any); ok {
 		for key, value := range snapshot {
 			vm.Set(key, value)
