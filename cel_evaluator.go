@@ -120,6 +120,7 @@ func (e *celEvaluator) buildEnv(snapshot map[string]any) (*celgo.Env, error) {
 		celgo.Variable("now", celgo.TimestampType),
 		celgo.Variable("args", celgo.DynType),
 		celgo.Variable("metadata", celgo.DynType),
+		celgo.Variable("scope", celgo.DynType),
 	}
 	if e.registry != nil {
 		opts = append(opts, celgo.Function("call", e.buildCallOverloads()...))
@@ -138,6 +139,9 @@ func (e *celEvaluator) activation(ctx RuleContext, snapshot map[string]any) map[
 		"now":      ctx.timestamp(),
 		"args":     ctx.Args,
 		"metadata": ctx.Metadata,
+	}
+	if binding := ctx.scopeBinding(); binding != nil {
+		activation["scope"] = binding
 	}
 	for key, value := range snapshot {
 		activation[key] = value
