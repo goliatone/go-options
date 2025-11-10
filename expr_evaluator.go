@@ -139,6 +139,9 @@ func (e *exprEvaluator) environment(ctx RuleContext) map[string]any {
 		"args":     ctx.Args,
 		"metadata": ctx.Metadata,
 	}
+	if binding := ctx.scopeBinding(); binding != nil {
+		env["scope"] = binding
+	}
 	if snapshot, ok := ctx.Snapshot.(map[string]any); ok {
 		for key, value := range snapshot {
 			env[key] = value
