@@ -1,5 +1,16 @@
 # Changelog
 
+# [Unreleased]
+
+## <!-- 3 -->📚 Documentation
+
+- Capture the scope architecture/migration guidance in `docs/SCOPE_TDD.md`, calling out immutable builders, trace walkthroughs, evaluator scope bindings, and how to opt into scope-aware schemas for downstream tooling.
+- Expand `README.md` with a scope quick start (stack assembly → trace → schema) so consumers can see the new API surface before diving into the detailed guides.
+
+## <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Add `examples/scope` plus `task scope:docs`/`scope:examples` so CI and local workflows compile the new quick-start snippets; update the release checklist to require `go test ./examples/options ./examples/scope` before tagging.
+
 # [0.2.0](https://github.com/goliatone/go-options/compare/v0.1.0...v0.2.0) - (2025-11-04)
 
 ## <!-- 13 -->📦 Bumps
@@ -57,5 +68,4 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
-
 
