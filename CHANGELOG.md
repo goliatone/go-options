@@ -1,15 +1,27 @@
 # Changelog
 
-# [Unreleased]
+# [0.3.0](https://github.com/goliatone/go-options/compare/v0.2.0...v0.3.0) - (2025-11-10)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.3.0 ([5ebcd23](https://github.com/goliatone/go-options/commit/5ebcd236d2d440b83c133732a13bd19cf0b0f297))  - (goliatone)
+
+## <!-- 16 -->➕ Add
+
+- Scope and binging ([8ba429e](https://github.com/goliatone/go-options/commit/8ba429eddd5863c81d227847cb5b67a1302896b6))  - (goliatone)
+- Clone layers ([028d23f](https://github.com/goliatone/go-options/commit/028d23f4215b1453b8b29cee790581ac57fac07b))  - (goliatone)
+- Layer snapshot ([fc70199](https://github.com/goliatone/go-options/commit/fc70199312794a92612e5ae5e438fee47bb1d0be))  - (goliatone)
+- Provenance & trace ([7ef7c96](https://github.com/goliatone/go-options/commit/7ef7c96641f0981fadb5de22fc36151d3f5ee7d8))  - (goliatone)
 
 ## <!-- 3 -->📚 Documentation
 
-- Capture the scope architecture/migration guidance in `docs/SCOPE_TDD.md`, calling out immutable builders, trace walkthroughs, evaluator scope bindings, and how to opt into scope-aware schemas for downstream tooling.
-- Expand `README.md` with a scope quick start (stack assembly → trace → schema) so consumers can see the new API surface before diving into the detailed guides.
+- Update changelog for v0.2.0 ([cc40b12](https://github.com/goliatone/go-options/commit/cc40b12ee072c5a9271cd7132ba0732a25c0d9fd))  - (goliatone)
 
 ## <!-- 7 -->⚙️ Miscellaneous Tasks
 
-- Add `examples/scope` plus `task scope:docs`/`scope:examples` so CI and local workflows compile the new quick-start snippets; update the release checklist to require `go test ./examples/options ./examples/scope` before tagging.
+- Update examples ([6437bdc](https://github.com/goliatone/go-options/commit/6437bdcd36bec24457636df46b9daa8c7bd8ce70))  - (goliatone)
+- Update readme ([1c0d7f1](https://github.com/goliatone/go-options/commit/1c0d7f12f1841f8ff12d5ab5a7c1747a45352308))  - (goliatone)
+- Update tests ([788d238](https://github.com/goliatone/go-options/commit/788d2384623e4182db7afe70e1afef079dc8b276))  - (goliatone)
 
 # [0.2.0](https://github.com/goliatone/go-options/compare/v0.1.0...v0.2.0) - (2025-11-04)
 
@@ -68,4 +80,5 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
+
 
