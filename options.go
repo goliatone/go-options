@@ -122,6 +122,7 @@ func (o *Options[T]) ResolveWithTrace(path string) (any, Trace, error) {
 			return nil, trace, err
 		}
 		trace.Layers = []Provenance{{
+			Scope: o.cfg.scope.clone(),
 			Path:  path,
 			Value: value,
 			Found: true,
@@ -236,6 +237,11 @@ func (o *Options[T]) Schema() (SchemaDocument, error) {
 	}
 	if doc.Document == nil {
 		doc.Document = []FieldDescriptor{}
+	}
+	if o != nil && o.cfg.scopeSchema {
+		if scopes := describeSchemaScopes(o.layerSnapshots()); len(scopes) > 0 {
+			doc.Scopes = scopes
+		}
 	}
 	return doc, nil
 }
@@ -460,6 +466,25 @@ func appendPathSegment(prefix, segment string) string {
 		return prefix
 	}
 	return prefix + "." + segment
+}
+
+func describeSchemaScopes(layers []layerSnapshot) []SchemaScope {
+	if len(layers) == 0 {
+		return nil
+	}
+	out := make([]SchemaScope, len(layers))
+	for i, layer := range layers {
+		out[i] = SchemaScope{
+			Name:       layer.Scope.Name,
+			Label:      layer.Scope.Label,
+			Priority:   layer.Scope.Priority,
+			SnapshotID: layer.SnapshotID,
+		}
+		if len(layer.Scope.Metadata) > 0 {
+			out[i].Metadata = copyMetadata(layer.Scope.Metadata)
+		}
+	}
+	return out
 }
 
 func structFieldByName(rv reflect.Value, segment string) (reflect.Value, bool) {
