@@ -183,3 +183,25 @@ func cloneValue(v reflect.Value) reflect.Value {
 		return reflect.ValueOf(v.Interface())
 	}
 }
+
+// Clone returns a deep copy of value, ensuring mutations on the returned value
+// do not impact the original. It mirrors the semantics used by MergeLayers so
+// scope stacks can safely capture immutable snapshots.
+func Clone[T any](value T) T {
+	var zero T
+	cloned := cloneValue(reflect.ValueOf(value))
+	if !cloned.IsValid() {
+		return zero
+	}
+	target := reflect.TypeOf(zero)
+	if target == nil {
+		result, _ := cloned.Interface().(T)
+		return result
+	}
+	if cloned.Type() != target {
+		holder := reflect.New(target).Elem()
+		holder.Set(cloned.Convert(target))
+		return holder.Interface().(T)
+	}
+	return cloned.Interface().(T)
+}
