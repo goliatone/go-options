@@ -5,7 +5,7 @@ Lightweight helpers for wrapping application specific option structs with defaul
 ## Installation
 
 ```bash
-go get github.com/goliatone/opts
+go get github.com/goliatone/go-options
 ```
 
 ## Quick Start
@@ -16,7 +16,7 @@ package main
 import (
 	"fmt"
 
-	opts "github.com/goliatone/opts"
+	opts "github.com/goliatone/go-options"
 )
 
 type NotificationOptions struct {
@@ -183,7 +183,7 @@ The wrapper offers dynamic helpers while keeping direct struct access the primar
 
 ```go
 import (
-	openapi "github.com/goliatone/opts/schema/openapi"
+	openapi "github.com/goliatone/go-options/schema/openapi"
 )
 
 wrapper := opts.New(map[string]any{
@@ -224,7 +224,7 @@ Key details:
 `Options.Schema()` delegates to a configurable `SchemaGenerator`. The default generator produces a slice of `FieldDescriptor` values (format `descriptors`). To generate OpenAPI compatible schemas:
 
 ```go
-import openapi "github.com/goliatone/opts/schema/openapi"
+import openapi "github.com/goliatone/go-options/schema/openapi"
 
 wrapper := opts.New(snapshot, openapi.Option(
 	openapi.WithInfo("Config Service", "1.2.0"),
