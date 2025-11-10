@@ -6,7 +6,7 @@ import "time"
 type Options[T any] struct {
 	Value T
 
-	cfg optionsConfig
+	cfg    optionsConfig
 	layers []layerSnapshot
 }
 
@@ -25,6 +25,16 @@ const (
 type SchemaDocument struct {
 	Format   SchemaFormat
 	Document any
+	Scopes   []SchemaScope
+}
+
+// SchemaScope describes a single scope entry included in a schema document.
+type SchemaScope struct {
+	Name       string         `json:"name"`
+	Label      string         `json:"label,omitempty"`
+	Priority   int            `json:"priority"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	SnapshotID string         `json:"snapshot_id,omitempty"`
 }
 
 // SchemaGenerator transforms an options value into a schema document. All
@@ -41,11 +51,12 @@ type Response[T any] struct {
 
 // RuleContext carries inputs needed when evaluating an expression.
 type RuleContext struct {
-	Snapshot any
-	Now      *time.Time
-	Args     map[string]any
-	Metadata map[string]any
-	Scope    string
+	Snapshot  any
+	Now       *time.Time
+	Args      map[string]any
+	Metadata  map[string]any
+	Scope     Scope
+	ScopeName string
 }
 
 func (ctx RuleContext) withDefaultNow() RuleContext {
@@ -72,11 +83,34 @@ func (ctx RuleContext) withDefaultMaps() RuleContext {
 	return ctx
 }
 
-func (ctx RuleContext) scopeLabel() string {
-	if ctx.Scope == "" {
-		return "unknown"
+func (ctx RuleContext) withDefaultScope(scope Scope) RuleContext {
+	if ctx.Scope.isZero() && !scope.isZero() {
+		ctx.Scope = scope.clone()
 	}
-	return ctx.Scope
+	if ctx.ScopeName == "" && ctx.Scope.Name != "" {
+		ctx.ScopeName = ctx.Scope.Name
+	}
+	return ctx
+}
+
+func (ctx RuleContext) scopeLabel() string {
+	if ctx.Scope.Name != "" {
+		return ctx.Scope.Name
+	}
+	if ctx.ScopeName != "" {
+		return ctx.ScopeName
+	}
+	return "unknown"
+}
+
+func (ctx RuleContext) scopeBinding() map[string]any {
+	if binding := scopeToBinding(ctx.Scope); binding != nil {
+		return binding
+	}
+	if ctx.ScopeName == "" {
+		return nil
+	}
+	return map[string]any{"name": ctx.ScopeName}
 }
 
 // Evaluator executes expressions against a rule context.
@@ -113,6 +147,8 @@ type optionsConfig struct {
 	functions       *FunctionRegistry
 	logger          EvaluatorLogger
 	schemaGenerator SchemaGenerator
+	scope           Scope
+	scopeSchema     bool
 }
 
 func applyOptions(opts []Option) optionsConfig {
@@ -160,6 +196,35 @@ func WithSchemaGenerator(generator SchemaGenerator) Option {
 	return func(cfg *optionsConfig) {
 		cfg.schemaGenerator = generator
 	}
+}
+
+// WithScope configures the default scope metadata applied to evaluator contexts.
+func WithScope(scope Scope) Option {
+	return func(cfg *optionsConfig) {
+		cfg.scope = scope.clone()
+	}
+}
+
+// WithScopeSchema toggles inclusion of scope metadata within generated schemas.
+func WithScopeSchema(include bool) Option {
+	return func(cfg *optionsConfig) {
+		cfg.scopeSchema = include
+	}
+}
+
+func scopeToBinding(scope Scope) map[string]any {
+	if scope.isZero() {
+		return nil
+	}
+	binding := map[string]any{
+		"name":     scope.Name,
+		"label":    scope.Label,
+		"priority": scope.Priority,
+	}
+	if len(scope.Metadata) > 0 {
+		binding["metadata"] = copyMetadata(scope.Metadata)
+	}
+	return binding
 }
 
 func (o *Options[T]) schemaGenerator() SchemaGenerator {
