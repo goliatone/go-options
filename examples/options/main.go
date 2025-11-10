@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	opts "github.com/goliatone/opts"
-	openapi "github.com/goliatone/opts/schema/openapi"
+	opts "github.com/goliatone/go-options"
+	openapi "github.com/goliatone/go-options/schema/openapi"
 )
 
 // ServerConfig holds server settings and demonstrates OpenAPI metadata tags.

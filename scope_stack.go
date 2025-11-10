@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	layering "github.com/goliatone/opts/layering"
+	layering "github.com/goliatone/go-options/layering"
 )
 
 // Scope models a named precedence bucket (system, tenant, user, etc.). Higher

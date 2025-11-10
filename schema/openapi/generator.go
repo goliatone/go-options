@@ -1,6 +1,6 @@
 package openapi
 
-import opts "github.com/goliatone/opts"
+import opts "github.com/goliatone/go-options"
 
 type generator struct {
 	config generatorConfig

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	opts "github.com/goliatone/opts"
+	opts "github.com/goliatone/go-options"
 )
 
 func TestNewGeneratorOptions(t *testing.T) {

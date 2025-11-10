@@ -4,8 +4,8 @@ import (
 	"sync"
 	"testing"
 
-	opts "github.com/goliatone/opts"
-	openapi "github.com/goliatone/opts/schema/openapi"
+	opts "github.com/goliatone/go-options"
+	openapi "github.com/goliatone/go-options/schema/openapi"
 )
 
 func TestOpenAPIGeneratorIntegration(t *testing.T) {

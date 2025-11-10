@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	opts "github.com/goliatone/opts"
+	opts "github.com/goliatone/go-options"
 )
 
 type snapshot = map[string]any

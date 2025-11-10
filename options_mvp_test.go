@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	layering "github.com/goliatone/opts/layering"
+	layering "github.com/goliatone/go-options/layering"
 )
 
 var errInvalid = errors.New("invalid value")
@@ -181,7 +181,7 @@ func TestOptionsCloneAndWithValue(t *testing.T) {
 func TestEvaluateWithWrapsEvaluationError(t *testing.T) {
 	opts := New(map[string]any{"flag": true})
 	ctx := RuleContext{
-		Scope: "user:42",
+		ScopeName: "user:42",
 	}
 	_, err := opts.EvaluateWith(ctx, "flag &&")
 	if err == nil {
@@ -229,7 +229,7 @@ func TestEvaluatorLoggerRecordsEvents(t *testing.T) {
 		t.Fatalf("expected unknown scope by default, got %q", success.Scope)
 	}
 
-	if _, err := opts.EvaluateWith(RuleContext{Scope: "group:7"}, "flag &&"); err == nil {
+	if _, err := opts.EvaluateWith(RuleContext{ScopeName: "group:7"}, "flag &&"); err == nil {
 		t.Fatalf("expected evaluation error")
 	}
 	if len(logger.events) != 2 {
@@ -248,6 +248,37 @@ func TestEvaluatorLoggerRecordsEvents(t *testing.T) {
 	}
 	if evalErr.Engine != "expr" {
 		t.Fatalf("expected engine expr in failure, got %q", evalErr.Engine)
+	}
+}
+
+func TestEvaluateExposesScopeBinding(t *testing.T) {
+	opts := New(
+		map[string]any{"flag": true},
+		WithScope(NewScope("user", ScopePriorityUser, WithScopeMetadata(map[string]any{"tier": "gold"}))),
+	)
+	resp, err := opts.Evaluate(`scope.name == "user" && scope.metadata.tier == "gold"`)
+	if err != nil {
+		t.Fatalf("unexpected evaluate error: %v", err)
+	}
+	value, _ := resp.Value.(bool)
+	if !value {
+		t.Fatalf("expected expression to see scope bindings, got %v", resp.Value)
+	}
+}
+
+func TestCELEvaluatorReceivesScopeBinding(t *testing.T) {
+	opts := New(
+		map[string]any{"flag": true},
+		WithEvaluator(NewCELEvaluator()),
+		WithScope(NewScope("tenant", ScopePriorityTenant)),
+	)
+	resp, err := opts.Evaluate(`scope.name == "tenant"`)
+	if err != nil {
+		t.Fatalf("unexpected evaluate error: %v", err)
+	}
+	value, _ := resp.Value.(bool)
+	if !value {
+		t.Fatalf("expected CEL expression to see scope bindings, got %v", resp.Value)
 	}
 }
 
@@ -297,6 +328,69 @@ func TestOptionsLayerWith(t *testing.T) {
 	var nilOpts *Options[snapshot]
 	if out := nilOpts.LayerWith(user); out == nil || !reflect.DeepEqual(user, out.Value) {
 		t.Fatalf("nil LayerWith should hydrate from layers, got %+v", out)
+	}
+}
+
+func TestSchemaIncludesScopeDescriptorsWhenEnabled(t *testing.T) {
+	type snapshot struct {
+		Enabled bool `json:"enabled"`
+	}
+	defaults := NewLayer(NewScope("defaults", ScopePrioritySystem), snapshot{Enabled: false})
+	user := NewLayer(NewScope("user", ScopePriorityUser, WithScopeMetadata(map[string]any{"email": "user@example.com"})),
+		snapshot{Enabled: true}, WithSnapshotID[snapshot]("user/123"))
+
+	stack, err := NewStack(defaults, user)
+	if err != nil {
+		t.Fatalf("stack creation failed: %v", err)
+	}
+	opts, err := stack.Merge(WithScopeSchema(true))
+	if err != nil {
+		t.Fatalf("stack merge failed: %v", err)
+	}
+	doc, err := opts.Schema()
+	if err != nil {
+		t.Fatalf("schema generation failed: %v", err)
+	}
+	if len(doc.Scopes) != 2 {
+		t.Fatalf("expected 2 scope descriptors, got %d", len(doc.Scopes))
+	}
+	if doc.Scopes[0].Name != "user" || doc.Scopes[0].SnapshotID != "user/123" {
+		t.Fatalf("unexpected strongest scope descriptor: %+v", doc.Scopes[0])
+	}
+	if doc.Scopes[1].Name != "defaults" {
+		t.Fatalf("expected defaults scope descriptor, got %+v", doc.Scopes[1])
+	}
+
+	optsNoScopes, err := stack.Merge()
+	if err != nil {
+		t.Fatalf("merge without scopes failed: %v", err)
+	}
+	doc, err = optsNoScopes.Schema()
+	if err != nil {
+		t.Fatalf("schema generation failed: %v", err)
+	}
+	if len(doc.Scopes) != 0 {
+		t.Fatalf("scope descriptors should be omitted by default, got %+v", doc.Scopes)
+	}
+}
+
+func TestSystemTenantOrgTeamUserHelper(t *testing.T) {
+	type snapshot struct {
+		Timeout int
+		Tag     string
+	}
+	opts, err := SystemTenantOrgTeamUser(
+		snapshot{Timeout: 10, Tag: "system"},
+		snapshot{Timeout: 20, Tag: "tenant"},
+		snapshot{Timeout: 30, Tag: "org"},
+		snapshot{Timeout: 40, Tag: "team"},
+		snapshot{Timeout: 50, Tag: "user"},
+	)
+	if err != nil {
+		t.Fatalf("helper failed: %v", err)
+	}
+	if opts.Value.Timeout != 50 || opts.Value.Tag != "user" {
+		t.Fatalf("strongest scope should win, got %+v", opts.Value)
 	}
 }
 

@@ -1,6 +1,6 @@
 package opts
 
-import layering "github.com/goliatone/opts/layering"
+import layering "github.com/goliatone/go-options/layering"
 
 // LayerWith merges layers ordered strongest to weakest with the current
 // snapshot as the fallback, returning a new wrapper with the merged value.
