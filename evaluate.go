@@ -17,7 +17,7 @@ func (o *Options[T]) Evaluate(expr string) (Response[any], error) {
 	if err != nil {
 		return Response[any]{}, err
 	}
-	ctx := RuleContext{Snapshot: o.Value}.withDefaultNow().withDefaultMaps()
+	ctx := RuleContext{Snapshot: o.Value}.withDefaultScope(o.cfg.scope).withDefaultNow().withDefaultMaps()
 	engine := evaluatorEngineName(evaluator)
 	start := time.Now()
 	value, evalErr := evaluator.Evaluate(ctx, expr)
@@ -49,7 +49,7 @@ func (o *Options[T]) EvaluateWith(ctx RuleContext, expr string) (Response[any], 
 	if ctx.Snapshot == nil {
 		ctx.Snapshot = o.Value
 	}
-	ctx = ctx.withDefaultNow().withDefaultMaps()
+	ctx = ctx.withDefaultScope(o.cfg.scope).withDefaultNow().withDefaultMaps()
 	engine := evaluatorEngineName(evaluator)
 	start := time.Now()
 	value, evalErr := evaluator.Evaluate(ctx, expr)
