@@ -1,4 +1,4 @@
-module github.com/goliatone/opts
+module github.com/goliatone/go-options
 
 go 1.23.4
 
