@@ -87,3 +87,29 @@ func loadLayeringFixture(t *testing.T, name string) layeringFixture {
 	}
 	return fx
 }
+
+func TestCloneProducesDeepCopy(t *testing.T) {
+	type snapshot struct {
+		Labels map[string]string
+		Count  *int
+	}
+	count := 5
+	base := snapshot{
+		Labels: map[string]string{"env": "prod"},
+		Count:  &count,
+	}
+
+	clone := Clone(base)
+	if clone.Count == base.Count {
+		t.Fatalf("expected pointer field to be cloned")
+	}
+
+	*clone.Count = 9
+	clone.Labels["env"] = "staging"
+	if *base.Count != 5 {
+		t.Fatalf("mutating clone should not affect base count, got %d", *base.Count)
+	}
+	if base.Labels["env"] != "prod" {
+		t.Fatalf("mutating clone should not affect base labels, got %q", base.Labels["env"])
+	}
+}
