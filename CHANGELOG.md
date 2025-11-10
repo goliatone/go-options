@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.4.0](https://github.com/goliatone/go-options/compare/v0.3.0...v0.4.0) - (2025-11-10)
+
+## <!-- 1 -->🐛 Bug Fixes
+
+- Package name ([677709c](https://github.com/goliatone/go-options/commit/677709cab36abf27c4a05e6bc36eddc339dc9bf0))  - (goliatone)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.4.0 ([08652ef](https://github.com/goliatone/go-options/commit/08652efc9deb4547781a0c15831d15a44b5bcac5))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.3.0 ([8f0efc4](https://github.com/goliatone/go-options/commit/8f0efc401e92929e3c2e49e65c10ab644d93ea09))  - (goliatone)
+
 # [0.3.0](https://github.com/goliatone/go-options/compare/v0.2.0...v0.3.0) - (2025-11-10)
 
 ## <!-- 13 -->📦 Bumps
