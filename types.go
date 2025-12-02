@@ -1,6 +1,10 @@
 package opts
 
-import "time"
+import (
+	"time"
+
+	"github.com/goliatone/go-options/pkg/activity"
+)
 
 // Options holds a typed options value and evaluator configuration.
 type Options[T any] struct {
@@ -149,6 +153,7 @@ type optionsConfig struct {
 	schemaGenerator SchemaGenerator
 	scope           Scope
 	scopeSchema     bool
+	activityHooks   activity.Hooks
 }
 
 func applyOptions(opts []Option) optionsConfig {
