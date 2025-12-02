@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### ➕ Add
+- Opt-in activity hooks/emitter, usersink adapter, options event helpers, docs/ACTIVITY.md, and examples/activity (unreleased)
+
 # [0.4.0](https://github.com/goliatone/go-options/compare/v0.3.0...v0.4.0) - (2025-11-10)
 
 ## <!-- 1 -->🐛 Bug Fixes
@@ -94,5 +99,4 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
-
 
