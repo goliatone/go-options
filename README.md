@@ -175,6 +175,15 @@ resp, _ := wrapper.EvaluateWith(ctx, `scope.name == "tenant" && call("equalsIgno
 
 Use `opts.WithScope(...)` when constructing an options wrapper to seed this metadata automatically; it will be copied into every `RuleContext` unless you override it per invocation.
 
+## Activity (opt-in)
+
+go-options can emit activity events using the shared hook pattern from go-cms/go-notifications. Everything is opt-in: no hooks configured means no emissions.
+
+- Add hooks when constructing options: `opts.New(value, opts.WithActivityHooks(activity.Hooks{&activity.CaptureHook{}}))` or include `usersink.Hook{Sink: yourActivitySink}` to forward into go-users.
+- Build lifecycle events with helpers like `activity.BuildOptionsUpdatedEvent(...)` (path, scope metadata, old/new values) and fan them out via `opts.ActivityHooks().Notify(ctx, evt)`.
+- Try the runnable demo in `examples/activity` to see capture + usersink hooks in action.
+- See `docs/ACTIVITY.md` for contracts, wiring, and adapter details.
+
 All fields default to zero cost empty values so existing call sites continue to work unchanged.
 
 ## Dynamic Paths & Schema
