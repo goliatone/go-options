@@ -97,6 +97,47 @@ function dev:cover {
     go test -coverprofile=coverage.out ./... && go tool cover -func coverage.out
 }
 
+function scope:test {
+    GOCACHE=$(pwd)/.gocache go test -run '(Scope|Stack)' ./...
+}
+
+function scope:bench {
+    GOCACHE=$(pwd)/.gocache go test -run=^$ -bench='Scope|Stack|ResolveWithTrace' -benchmem ./...
+}
+
+function scope:lint {
+    go vet ./...
+}
+
+function scope:docs {
+    if rg -q "Architectural Overview" docs/SCOPE_TDD.md && rg -q "Scope Quick Start" README.md; then
+        lgr OK "scope docs contain required sections"
+    else
+        lgr E "missing scope docs section"
+        exit 1
+    fi
+}
+
+function scope:examples {
+    GOCACHE=$(pwd)/.gocache go test ./examples/...
+}
+
+function activity:test {
+    if [ -d "$(pwd)/pkg/activity" ]; then
+        GOCACHE=$(pwd)/.gocache go test ./pkg/activity/...
+    else
+        lgr I "pkg/activity not present; skipping activity:test (placeholder target)"
+    fi
+}
+
+function activity:examples {
+    if [ -d "$(pwd)/examples/activity" ]; then
+        GOCACHE=$(pwd)/.gocache go test ./examples/activity/...
+    else
+        lgr I "examples/activity not present; skipping activity:examples (placeholder target)"
+    fi
+}
+
 ##
 ## ########################################
 ##           Version Management
