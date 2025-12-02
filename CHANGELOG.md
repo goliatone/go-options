@@ -1,9 +1,29 @@
 # Changelog
 
-## Unreleased
+# [0.5.0](https://github.com/goliatone/go-options/compare/v0.4.0...v0.5.0) - (2025-12-02)
 
-### ➕ Add
-- Opt-in activity hooks/emitter, usersink adapter, options event helpers, docs/ACTIVITY.md, and examples/activity (unreleased)
+## <!-- 1 -->🐛 Bug Fixes
+
+- Update templates ([eb3a937](https://github.com/goliatone/go-options/commit/eb3a93785b88978c2986f2aa2e24391f47b40c4f))  - (goliatone)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.5.0 ([5155edb](https://github.com/goliatone/go-options/commit/5155edb580e03fa8b06effe6da10ec4072093d7f))  - (goliatone)
+
+## <!-- 16 -->➕ Add
+
+- Activity adapter ([a0146f1](https://github.com/goliatone/go-options/commit/a0146f1f2a5aa115e48218b94b1fc91aba628d9c))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.4.0 ([3a20cdc](https://github.com/goliatone/go-options/commit/3a20cdc67acea73c82e1f313c985ba591072dd80))  - (goliatone)
+
+## <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Update task ([31bebcc](https://github.com/goliatone/go-options/commit/31bebcc406c37cca91faee89eb4c903034f7e853))  - (goliatone)
+- Update readme ([f7f3f9e](https://github.com/goliatone/go-options/commit/f7f3f9e625eab563f72a07800d828cf392019c29))  - (goliatone)
+- Update example ([526852b](https://github.com/goliatone/go-options/commit/526852b5ad45d47165175008b9dc7aa4c131b844))  - (goliatone)
+- Update deps ([7f2c10b](https://github.com/goliatone/go-options/commit/7f2c10bae099c691f12e02db3a9cdd8495307489))  - (goliatone)
 
 # [0.4.0](https://github.com/goliatone/go-options/compare/v0.3.0...v0.4.0) - (2025-11-10)
 
@@ -99,4 +119,5 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
+
 
