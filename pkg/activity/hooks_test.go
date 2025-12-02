@@ -62,6 +62,8 @@ func TestHooksNotifyShortCircuitsMissingRequired(t *testing.T) {
 func TestHooksNotifyFanOutAndJoinErrors(t *testing.T) {
 	capture := &CaptureHook{}
 	var ctxSeen bool
+	errOne := errors.New("boom1")
+	errTwo := errors.New("boom2")
 	hooks := Hooks{
 		HookFunc(func(ctx context.Context, event Event) error {
 			if ctx != nil {
@@ -70,13 +72,13 @@ func TestHooksNotifyFanOutAndJoinErrors(t *testing.T) {
 			return nil
 		}),
 		capture,
-		HookFunc(func(_ context.Context, _ Event) error { return errors.New("boom1") }),
+		HookFunc(func(_ context.Context, _ Event) error { return errOne }),
 		nil,
-		HookFunc(func(_ context.Context, _ Event) error { return errors.New("boom2") }),
+		HookFunc(func(_ context.Context, _ Event) error { return errTwo }),
 	}
 
 	err := hooks.Notify(nil, Event{Verb: "update", ObjectType: "option", ObjectID: "1"})
-	if err == nil || !errors.Is(err, errors.New("boom1")) || !errors.Is(err, errors.New("boom2")) {
+	if err == nil || !errors.Is(err, errOne) || !errors.Is(err, errTwo) {
 		t.Fatalf("expected joined error, got %v", err)
 	}
 	if !ctxSeen {
