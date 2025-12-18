@@ -122,6 +122,22 @@ function scope:examples {
     GOCACHE=$(pwd)/.gocache go test ./examples/...
 }
 
+function state:test {
+    if [ -d "$(pwd)/pkg/state" ]; then
+        env -u GOROOT GOCACHE=$(pwd)/.gocache go test ./pkg/state/...
+    else
+        lgr I "pkg/state not present; skipping state:test (placeholder target)"
+    fi
+}
+
+function state:examples {
+    if [ -d "$(pwd)/examples/state" ]; then
+        env -u GOROOT GOCACHE=$(pwd)/.gocache go test ./examples/state/...
+    else
+        lgr I "examples/state not present; skipping state:examples (placeholder target)"
+    fi
+}
+
 function activity:test {
     if [ -d "$(pwd)/pkg/activity" ]; then
         GOCACHE=$(pwd)/.gocache go test ./pkg/activity/...
