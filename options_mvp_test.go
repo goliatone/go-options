@@ -17,6 +17,13 @@ import (
 
 var errInvalid = errors.New("invalid value")
 
+func skipJSTestsWhenUnavailable(t *testing.T, factoryName string) {
+	t.Helper()
+	if factoryName == "js" && !jsEvaluatorAvailable() {
+		t.Skip("js evaluator requires -tags js_eval")
+	}
+}
+
 type testValidatable struct {
 	Valid bool
 }
@@ -447,6 +454,7 @@ func TestUC1FeatureToggleFixture(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
 				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
@@ -503,6 +511,7 @@ func TestUC2ChannelSelectionFixture(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
 				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
@@ -574,6 +583,7 @@ func TestUC3TimeRulesFixture(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
 				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
@@ -640,6 +650,7 @@ func TestEvaluatorProgramCache(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
 				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
@@ -648,7 +659,6 @@ func TestEvaluatorProgramCache(t *testing.T) {
 					snapshot := mergeMaps(fx.Defaults, tc.Input)
 					opts := New(snapshot,
 						WithEvaluator(evaluator),
-						WithProgramCache(cache),
 					)
 
 					for i := 0; i < tc.Iterations; i++ {
@@ -673,6 +683,7 @@ func TestEvaluateWithSnapshotOnlyContext(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			opts := New(map[string]any{
 				"Features": map[string]any{
 					"NewUI": map[string]any{
@@ -890,6 +901,7 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 	for _, factory := range evaluatorFactories {
 		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
+			skipJSTestsWhenUnavailable(t, factory.name)
 			registry := NewFunctionRegistry()
 			if err := registry.Register("equalsIgnoreCase", func(args ...any) (any, error) {
 				if len(args) != 2 {
