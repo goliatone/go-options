@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.7.0](https://github.com/goliatone/go-options/compare/v0.6.0...v0.7.0) - (2025-12-18)
+
+## <!-- 1 -->🐛 Bug Fixes
+
+- Workflow engine implement auth ([e88e2c0](https://github.com/goliatone/go-options/commit/e88e2c0d0aa0cdaed9e17b4d49b18169fb71a2bb))  - (goliatone)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.7.0 ([63c17c0](https://github.com/goliatone/go-options/commit/63c17c0fb94681b259986ce1bd18068059d98339))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.6.0 ([00ecc5e](https://github.com/goliatone/go-options/commit/00ecc5eb5c6bc4eb7d145316a7d9cc6907d9c33f))  - (goliatone)
+
 # [0.6.0](https://github.com/goliatone/go-options/compare/v0.5.0...v0.6.0) - (2025-12-18)
 
 ## <!-- 1 -->🐛 Bug Fixes
