@@ -109,6 +109,20 @@ for _, scope := range doc.Scopes {
 
 Because the stack was merged with `opts.WithScopeSchema(true)`, each schema now emits an ordered list of scopes alongside the regular descriptor/OpenAPI payload.
 
+## State Storage (opt-in)
+
+`pkg/state` provides persistence-facing contracts (load/save one scoped snapshot) plus a small resolver that hydrates an `opts.Stack[T]` and preserves provenance.
+
+- `state.Store[T]` loads/saves one `state.Ref` (domain + `opts.Scope`).
+- `state.Resolver[T]` loads scopes, builds `opts.Layer[T]` with `SnapshotID`, and merges with scope metadata enabled.
+- `state.Ref.Identifier()` builds canonical storage keys (`system/tenant/org/team/user`).
+
+Try the runnable demo in `examples/state`:
+
+```bash
+go run ./examples/state
+```
+
 ## Defaults & Validation
 
 `ApplyDefaults` returns the fallback struct when the current value is the zero value. `Load` combines construction with a validation pass. If the wrapped struct (or its pointer form) implements `Validate() error`, the hook fires automatically.
