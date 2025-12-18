@@ -1,0 +1,109 @@
+{
+  "description": "State resolver scenarios covering precedence, missing layers, and SnapshotID provenance for trace/schema.",
+  "cases": [
+    {
+      "name": "user_over_team_over_system",
+      "domain": "notifications",
+      "requested_scopes": [
+        { "name": "user", "priority": 500, "metadata": { "user_id": "u42" } },
+        { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+        { "name": "system", "priority": 100, "metadata": {} }
+      ],
+      "records": [
+        {
+          "scope": { "name": "user", "priority": 500, "metadata": { "user_id": "u42" } },
+          "meta": { "snapshot_id": "snap-user" },
+          "snapshot": {
+            "notifications": { "email": { "enabled": true } }
+          }
+        },
+        {
+          "scope": { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+          "meta": { "snapshot_id": "snap-team" },
+          "snapshot": {
+            "notifications": {
+              "email": { "subject": "Team template" },
+              "sms": { "enabled": true }
+            }
+          }
+        },
+        {
+          "scope": { "name": "system", "priority": 100, "metadata": {} },
+          "meta": { "snapshot_id": "snap-system" },
+          "snapshot": {
+            "notifications": {
+              "email": { "enabled": false, "subject": "System template" },
+              "sms": { "enabled": false }
+            }
+          }
+        }
+      ],
+      "resolve": [
+        {
+          "path": "notifications.email.enabled",
+          "expect": {
+            "value": true,
+            "trace": [
+              { "scope": "user", "found": true, "snapshot_id": "snap-user" },
+              { "scope": "team", "found": false, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": true, "snapshot_id": "snap-system" }
+            ]
+          }
+        },
+        {
+          "path": "notifications.email.subject",
+          "expect": {
+            "value": "Team template",
+            "trace": [
+              { "scope": "user", "found": false, "snapshot_id": "snap-user" },
+              { "scope": "team", "found": true, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": true, "snapshot_id": "snap-system" }
+            ]
+          }
+        }
+      ],
+      "schema_scopes_expect": [
+        { "name": "user", "priority": 500, "snapshot_id": "snap-user" },
+        { "name": "team", "priority": 400, "snapshot_id": "snap-team" },
+        { "name": "system", "priority": 100, "snapshot_id": "snap-system" }
+      ]
+    },
+    {
+      "name": "missing_user_layer_falls_back_to_system",
+      "domain": "notifications",
+      "requested_scopes": [
+        { "name": "user", "priority": 500, "metadata": { "user_id": "u42" } },
+        { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+        { "name": "system", "priority": 100, "metadata": {} }
+      ],
+      "records": [
+        {
+          "scope": { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+          "meta": { "snapshot_id": "snap-team" },
+          "snapshot": { "notifications": { "email": { "subject": "Team template" } } }
+        },
+        {
+          "scope": { "name": "system", "priority": 100, "metadata": {} },
+          "meta": { "snapshot_id": "snap-system" },
+          "snapshot": { "notifications": { "email": { "enabled": false } } }
+        }
+      ],
+      "resolve": [
+        {
+          "path": "notifications.email.enabled",
+          "expect": {
+            "value": false,
+            "trace": [
+              { "scope": "team", "found": false, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": true, "snapshot_id": "snap-system" }
+            ]
+          }
+        }
+      ],
+      "schema_scopes_expect": [
+        { "name": "team", "priority": 400, "snapshot_id": "snap-team" },
+        { "name": "system", "priority": 100, "snapshot_id": "snap-system" }
+      ]
+    }
+  ]
+}

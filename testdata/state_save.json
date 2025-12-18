@@ -1,0 +1,39 @@
+{
+  "description": "Store.Save contract scenarios validating metadata round-tripping and overwrite behavior.",
+  "cases": [
+    {
+      "name": "save_then_load_roundtrips_snapshot_and_meta",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "user", "priority": 500, "metadata": { "user_id": "u42" } }
+      },
+      "save": {
+        "snapshot": { "notifications": { "email": { "enabled": true } } },
+        "meta": { "snapshot_id": "snap-1", "etag": "e1", "extra": { "source": "test" } }
+      },
+      "expect": {
+        "meta": { "snapshot_id": "snap-1", "etag": "e1", "extra": { "source": "test" } },
+        "load_ok": true,
+        "loaded_snapshot": { "notifications": { "email": { "enabled": true } } },
+        "loaded_meta": { "snapshot_id": "snap-1", "etag": "e1", "extra": { "source": "test" } }
+      }
+    },
+    {
+      "name": "save_overwrites_existing_record",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } }
+      },
+      "save": {
+        "snapshot": { "notifications": { "email": { "subject": "Team template" } } },
+        "meta": { "snapshot_id": "snap-team-2", "etag": "e2" }
+      },
+      "expect": {
+        "meta": { "snapshot_id": "snap-team-2", "etag": "e2" },
+        "load_ok": true,
+        "loaded_snapshot": { "notifications": { "email": { "subject": "Team template" } } },
+        "loaded_meta": { "snapshot_id": "snap-team-2", "etag": "e2" }
+      }
+    }
+  ]
+}

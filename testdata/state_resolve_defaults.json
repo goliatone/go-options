@@ -1,0 +1,79 @@
+{
+  "description": "State resolver ResolveWithDefaults scenarios proving defaults are weakest and participate in trace/schema.",
+  "cases": [
+    {
+      "name": "defaults_are_weakest_and_fill_missing_values",
+      "domain": "notifications",
+      "defaults": {
+        "notifications": {
+          "email": { "enabled": false, "subject": "Default template" },
+          "sms": { "enabled": true }
+        }
+      },
+      "requested_scopes": [
+        { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+        { "name": "system", "priority": 100, "metadata": {} }
+      ],
+      "records": [
+        {
+          "scope": { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } },
+          "meta": { "snapshot_id": "snap-team" },
+          "snapshot": {
+            "notifications": {
+              "email": { "subject": "Team template" }
+            }
+          }
+        },
+        {
+          "scope": { "name": "system", "priority": 100, "metadata": {} },
+          "meta": { "snapshot_id": "snap-system" },
+          "snapshot": {
+            "notifications": {
+              "email": { "enabled": true }
+            }
+          }
+        }
+      ],
+      "resolve": [
+        {
+          "path": "notifications.email.enabled",
+          "expect": {
+            "value": true,
+            "trace": [
+              { "scope": "team", "found": false, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": true, "snapshot_id": "snap-system" },
+              { "scope": "defaults", "found": true, "snapshot_id": "" }
+            ]
+          }
+        },
+        {
+          "path": "notifications.email.subject",
+          "expect": {
+            "value": "Team template",
+            "trace": [
+              { "scope": "team", "found": true, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": false, "snapshot_id": "snap-system" },
+              { "scope": "defaults", "found": true, "snapshot_id": "" }
+            ]
+          }
+        },
+        {
+          "path": "notifications.sms.enabled",
+          "expect": {
+            "value": true,
+            "trace": [
+              { "scope": "team", "found": false, "snapshot_id": "snap-team" },
+              { "scope": "system", "found": false, "snapshot_id": "snap-system" },
+              { "scope": "defaults", "found": true, "snapshot_id": "" }
+            ]
+          }
+        }
+      ],
+      "schema_scopes_expect": [
+        { "name": "team", "priority": 400, "snapshot_id": "snap-team" },
+        { "name": "system", "priority": 100, "snapshot_id": "snap-system" },
+        { "name": "defaults", "priority": 99, "snapshot_id": "" }
+      ]
+    }
+  ]
+}

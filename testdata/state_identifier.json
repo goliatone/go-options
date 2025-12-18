@@ -1,0 +1,62 @@
+{
+  "description": "State Ref.Identifier scenarios covering canonical scope names, required metadata keys, and error cases.",
+  "cases": [
+    {
+      "name": "system_scope_has_no_id",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "system", "priority": 100, "metadata": {} }
+      },
+      "expect": { "value": "system/notifications", "err": "" }
+    },
+    {
+      "name": "tenant_scope_requires_tenant_id",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "tenant", "priority": 200, "metadata": { "tenant_id": "t1" } }
+      },
+      "expect": { "value": "tenant/t1/notifications", "err": "" }
+    },
+    {
+      "name": "org_scope_requires_org_id",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "org", "priority": 300, "metadata": { "org_id": "o1" } }
+      },
+      "expect": { "value": "org/o1/notifications", "err": "" }
+    },
+    {
+      "name": "team_scope_requires_team_id",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "team", "priority": 400, "metadata": { "team_id": "team9" } }
+      },
+      "expect": { "value": "team/team9/notifications", "err": "" }
+    },
+    {
+      "name": "user_scope_requires_user_id",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "user", "priority": 500, "metadata": { "user_id": "u42" } }
+      },
+      "expect": { "value": "user/u42/notifications", "err": "" }
+    },
+    {
+      "name": "missing_required_metadata_key_returns_error",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "user", "priority": 500, "metadata": {} }
+      },
+      "expect": { "value": "", "err": "missing metadata key \"user_id\" for scope \"user\"" }
+    },
+    {
+      "name": "unknown_scope_name_returns_error",
+      "ref": {
+        "domain": "notifications",
+        "scope": { "name": "custom", "priority": 123, "metadata": { "id": "x" } }
+      },
+      "expect": { "value": "", "err": "unsupported scope name \"custom\"" }
+    }
+  ]
+}
+
