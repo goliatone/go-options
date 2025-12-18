@@ -1,11 +1,32 @@
 # Changelog
 
-# [Unreleased]
+# [0.6.0](https://github.com/goliatone/go-options/compare/v0.5.0...v0.6.0) - (2025-12-18)
 
-## ⚠️ Breaking Changes
+## <!-- 1 -->🐛 Bug Fixes
 
-- Scope unification: removed the legacy scope model from `github.com/goliatone/go-options/layering` (the `global/group/user` scope types and helpers). Use the unified `opts.Scope` from `scope_stack.go` instead and follow `SCOPE_MIGRATION.md`.
-- Deterministic storage keys: use `pkg/state` (`state.Ref.Identifier`) for canonical keys (`system/tenant/org/team/user`); if you have persisted legacy `global/group/user` keys, handle read-old/write-new in your storage adapter during migration.
+- Workflow engine implement auth ([f20e235](https://github.com/goliatone/go-options/commit/f20e2353d0bfeb66383c3c4106c016bb14637c5e))  - (goliatone)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.6.0 ([22aa2b3](https://github.com/goliatone/go-options/commit/22aa2b3b2bfc38c01e513a0b0734d0ed40031054))  - (goliatone)
+
+## <!-- 16 -->➕ Add
+
+- Pkg state to provide interfaces to manage state ([4c40dce](https://github.com/goliatone/go-options/commit/4c40dce78d8510659b2a4098e43ceceef58aa014))  - (goliatone)
+
+## <!-- 2 -->🚜 Refactor
+
+- Make js evaluator available ([5e5538b](https://github.com/goliatone/go-options/commit/5e5538bd5b32fb6451db2ce5adf91759135357dc))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.5.0 ([71d568a](https://github.com/goliatone/go-options/commit/71d568a4a6813d0acd00916d83490c6fedf5e2ce))  - (goliatone)
+
+## <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Update readme ([2a6db75](https://github.com/goliatone/go-options/commit/2a6db75f624a5d3ba6143bb802e185dc8764f86a))  - (goliatone)
+- Update tests ([91aac97](https://github.com/goliatone/go-options/commit/91aac971ecae5a4c2f64b36819b1c5272ac800ab))  - (goliatone)
+- Update example ([762c5da](https://github.com/goliatone/go-options/commit/762c5da0c2e092ce1300f3f596366b33f28f5f8a))  - (goliatone)
 
 # [0.5.0](https://github.com/goliatone/go-options/compare/v0.4.0...v0.5.0) - (2025-12-02)
 
@@ -126,4 +147,5 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
+
 
