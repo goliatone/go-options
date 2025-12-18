@@ -1,5 +1,12 @@
 # Changelog
 
+# [Unreleased]
+
+## ⚠️ Breaking Changes
+
+- Scope unification: removed the legacy scope model from `github.com/goliatone/go-options/layering` (the `global/group/user` scope types and helpers). Use the unified `opts.Scope` from `scope_stack.go` instead and follow `SCOPE_MIGRATION.md`.
+- Deterministic storage keys: use `pkg/state` (`state.Ref.Identifier`) for canonical keys (`system/tenant/org/team/user`); if you have persisted legacy `global/group/user` keys, handle read-old/write-new in your storage adapter during migration.
+
 # [0.5.0](https://github.com/goliatone/go-options/compare/v0.4.0...v0.5.0) - (2025-12-02)
 
 ## <!-- 1 -->🐛 Bug Fixes
@@ -119,5 +126,4 @@
 - Udpate deps ([5b0cdc9](https://github.com/goliatone/go-options/commit/5b0cdc92241940c2d1652638432cb5db65d99b4b))  - (goliatone)
 - Add deps ([68e2e32](https://github.com/goliatone/go-options/commit/68e2e32a56f8df7bff47f7abef65f81d1cbed570))  - (goliatone)
 - Initial commit ([00a88c4](https://github.com/goliatone/go-options/commit/00a88c4b2adad25e4a2a6695e397d72b405b8d08))  - (goliatone)
-
 
