@@ -138,6 +138,10 @@ func (e *jsEvaluator) wrapExpression(expression string) string {
 	return fmt.Sprintf("(function(){ return (%s); })()", expression)
 }
 
+func jsEvaluatorAvailable() bool {
+	return true
+}
+
 type jsCompiledRule struct {
 	evaluator  *jsEvaluator
 	expression string
