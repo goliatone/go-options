@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.7.1](https://github.com/goliatone/go-options/compare/v0.7.0...v0.7.1) - (2026-02-13)
+
+## <!-- 13 -->📦 Bumps
+
+- Bump version: v0.7.1 ([50ffa68](https://github.com/goliatone/go-options/commit/50ffa68a6d720b4338e3edf4d739f0df58d8b45e))  - (goliatone)
+
+## <!-- 3 -->📚 Documentation
+
+- Update changelog for v0.7.0 ([cc82f95](https://github.com/goliatone/go-options/commit/cc82f95d092899cf744199534134049d7b497a62))  - (goliatone)
+
+## <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Upgrade deps ([4e0b4f7](https://github.com/goliatone/go-options/commit/4e0b4f7602fc4070c6d29727d142f0e10d9a06d6))  - (goliatone)
+
 # [0.7.0](https://github.com/goliatone/go-options/compare/v0.6.0...v0.7.0) - (2025-12-18)
 
 ## <!-- 1 -->🐛 Bug Fixes
