@@ -204,7 +204,7 @@ func (e *celEvaluator) callBinding() func(...ref.Val) ref.Val {
 		}
 		result, err := e.registry.Call(name, args...)
 		if err != nil {
-			return types.NewErr(err.Error())
+			return types.NewErr("%s", err.Error())
 		}
 		if result == nil {
 			return types.NullValue
@@ -224,7 +224,7 @@ func (e *celEvaluator) directBinding(name string) func(...ref.Val) ref.Val {
 		}
 		result, err := e.registry.Call(name, args...)
 		if err != nil {
-			return types.NewErr(err.Error())
+			return types.NewErr("%s", err.Error())
 		}
 		if result == nil {
 			return types.NullValue
