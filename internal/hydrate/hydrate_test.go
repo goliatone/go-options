@@ -15,7 +15,6 @@ func TestDecoderFromFixtures(t *testing.T) {
 	fx := loadFixture(t, "hydrate_notifications.json")
 
 	for _, tc := range fx.Cases {
-		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
 			options := buildOptions(tc)
 			decoder := NewDecoder[notificationSettings](options...)

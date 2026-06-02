@@ -12,7 +12,6 @@ func TestMergeLayersFromFixture(t *testing.T) {
 	fx := loadLayeringFixture(t, "layering_merge.json")
 
 	for _, tc := range fx.Cases {
-		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
 			layers := make([]layeringSettings, len(tc.Layers))
 			for i := range tc.Layers {

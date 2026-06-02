@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"sync"
@@ -93,9 +94,7 @@ func (r *FunctionRegistry) Clone() *FunctionRegistry {
 	clone := &FunctionRegistry{
 		functions: make(map[string]Function, len(r.functions)),
 	}
-	for name, fn := range r.functions {
-		clone.functions[name] = fn
-	}
+	maps.Copy(clone.functions, r.functions)
 	return clone
 }
 
@@ -144,6 +143,7 @@ func WithCustomFunction(name string, fn Function) Option {
 		if cfg.functions == nil {
 			cfg.functions = NewFunctionRegistry()
 		}
+		//nolint:errcheck // Options are side-effect only; invalid custom function input is ignored to preserve constructor behavior.
 		_ = cfg.functions.Register(name, fn)
 	}
 }
