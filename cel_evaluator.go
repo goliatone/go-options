@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"maps"
 
 	celgo "github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
@@ -143,9 +144,7 @@ func (e *celEvaluator) activation(ctx RuleContext, snapshot map[string]any) map[
 	if binding := ctx.scopeBinding(); binding != nil {
 		activation["scope"] = binding
 	}
-	for key, value := range snapshot {
-		activation[key] = value
-	}
+	maps.Copy(activation, snapshot)
 	if e.registry != nil {
 		activation["call"] = func(name string, arguments ...any) (any, error) {
 			return e.registry.Call(name, arguments...)

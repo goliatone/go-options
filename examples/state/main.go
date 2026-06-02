@@ -70,7 +70,10 @@ func main() {
 		log.Fatalf("resolve: %v", err)
 	}
 
-	pretty, _ := json.MarshalIndent(options.Value, "", "  ")
+	pretty, err := json.MarshalIndent(options.Value, "", "  ")
+	if err != nil {
+		log.Fatalf("marshal resolved value: %v", err)
+	}
 	fmt.Printf("Resolved value:\n%s\n\n", pretty)
 
 	value, trace, err := options.ResolveWithTrace("notifications.email.enabled")
@@ -98,4 +101,3 @@ func main() {
 	}
 	fmt.Printf("\nStorage key example: %s\n", key)
 }
-

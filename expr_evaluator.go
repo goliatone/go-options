@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"maps"
 
 	exprlang "github.com/expr-lang/expr"
 	exprvm "github.com/expr-lang/expr/vm"
@@ -143,9 +144,7 @@ func (e *exprEvaluator) environment(ctx RuleContext) map[string]any {
 		env["scope"] = binding
 	}
 	if snapshot, ok := ctx.Snapshot.(map[string]any); ok {
-		for key, value := range snapshot {
-			env[key] = value
-		}
+		maps.Copy(env, snapshot)
 	}
 	if e.registry != nil {
 		env["call"] = func(name string, arguments ...any) (any, error) {

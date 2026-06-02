@@ -3,6 +3,7 @@ package opts
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -117,9 +118,9 @@ func (o *Options[T]) ResolveWithTrace(path string) (any, Trace, error) {
 
 	layers := o.layerSnapshots()
 	if len(layers) == 0 {
-		value, err := o.Get(path)
-		if err != nil {
-			return nil, trace, err
+		value, getErr := o.Get(path)
+		if getErr != nil {
+			return nil, trace, getErr
 		}
 		trace.Layers = []Provenance{{
 			Scope: o.cfg.scope.clone(),
@@ -140,8 +141,8 @@ func (o *Options[T]) ResolveWithTrace(path string) (any, Trace, error) {
 			SnapshotID: layer.SnapshotID,
 			Path:       path,
 		}
-		layerValue, err := navigateSegments(layer.Snapshot, segments)
-		if err == nil {
+		layerValue, navigateErr := navigateSegments(layer.Snapshot, segments)
+		if navigateErr == nil {
 			prov.Found = true
 			prov.Value = layerValue
 			if !resolved {
@@ -291,10 +292,8 @@ func splitPath(path string) ([]string, error) {
 		return nil, fmt.Errorf("opts: path must not be empty")
 	}
 	segments := strings.Split(path, ".")
-	for _, segment := range segments {
-		if segment == "" {
-			return nil, fmt.Errorf("opts: path %q contains empty segment", path)
-		}
+	if slices.Contains(segments, "") {
+		return nil, fmt.Errorf("opts: path %q contains empty segment", path)
 	}
 	return segments, nil
 }
@@ -332,7 +331,7 @@ func navigateSegment(value any, segment string) (any, error) {
 	case reflect.Slice, reflect.Array:
 		index, err := strconv.Atoi(segment)
 		if err != nil {
-			return nil, fmt.Errorf("expected numeric index: %v", err)
+			return nil, fmt.Errorf("expected numeric index: %w", err)
 		}
 		if index < 0 || index >= rv.Len() {
 			return nil, fmt.Errorf("index %d out of bounds", index)
@@ -367,6 +366,7 @@ func collectPaths(value any) []string {
 	return keys
 }
 
+//nolint:gocyclo,funlen // Recursive reflection traversal handles structs, maps, slices, pointers, and cycles in one place.
 func flattenValue(rv reflect.Value, prefix string, paths map[string]struct{}, seen map[uintptr]struct{}) {
 	if !rv.IsValid() {
 		if prefix != "" {

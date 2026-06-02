@@ -267,8 +267,8 @@ func TestEvaluateExposesScopeBinding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected evaluate error: %v", err)
 	}
-	value, _ := resp.Value.(bool)
-	if !value {
+	value, ok := resp.Value.(bool)
+	if !ok || !value {
 		t.Fatalf("expected expression to see scope bindings, got %v", resp.Value)
 	}
 }
@@ -283,8 +283,8 @@ func TestCELEvaluatorReceivesScopeBinding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected evaluate error: %v", err)
 	}
-	value, _ := resp.Value.(bool)
-	if !value {
+	value, ok := resp.Value.(bool)
+	if !ok || !value {
 		t.Fatalf("expected CEL expression to see scope bindings, got %v", resp.Value)
 	}
 }
@@ -452,11 +452,9 @@ func TestUC1FeatureToggleFixture(t *testing.T) {
 	fx := loadFixture[fixture](t, "uc1_feature_toggle.json")
 
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
-				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
 					snapshot := mergeMaps(fx.Defaults, tc.Input)
 					opts := New(snapshot, WithEvaluator(factory.new(nil, nil)))
@@ -509,11 +507,9 @@ func TestUC2ChannelSelectionFixture(t *testing.T) {
 	fx := loadFixture[fixture](t, "uc2_channel_selection.json")
 
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
-				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
 					snapshot := mergeMaps(fx.Defaults, tc.Input)
 					opts := New(snapshot, WithEvaluator(factory.new(nil, nil)))
@@ -581,20 +577,24 @@ func TestUC3TimeRulesFixture(t *testing.T) {
 	fx := loadFixture[fixture](t, "uc3_time_rules.json")
 
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
-				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
-					snapshot := convertTimeEncodings(t, mergeMaps(fx.Defaults, tc.Input)).(map[string]any)
+					snapshot, ok := convertTimeEncodings(t, mergeMaps(fx.Defaults, tc.Input)).(map[string]any)
+					if !ok {
+						t.Fatalf("expected snapshot map")
+					}
 					opts := New(snapshot, WithEvaluator(factory.new(nil, nil)))
 
 					ctx := RuleContext{
 						Snapshot: snapshot,
 					}
 					if tc.Context != nil {
-						contextValues := convertTimeEncodings(t, tc.Context).(map[string]any)
+						contextValues, contextOK := convertTimeEncodings(t, tc.Context).(map[string]any)
+						if !contextOK {
+							t.Fatalf("expected context map")
+						}
 						applyTimeContext(&ctx, contextValues)
 					}
 
@@ -648,11 +648,9 @@ func TestEvaluatorProgramCache(t *testing.T) {
 	fx := loadFixture[cacheFixture](t, "cache_programs.json")
 
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			for _, tc := range fx.Cases {
-				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
 					cache := &fakeProgramCache{}
 					evaluator := factory.new(cache, nil)
@@ -681,7 +679,6 @@ func TestEvaluatorProgramCache(t *testing.T) {
 
 func TestEvaluateWithSnapshotOnlyContext(t *testing.T) {
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			opts := New(map[string]any{
@@ -896,10 +893,12 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 	}
 
 	fx := loadFixture[fixture](t, "custom_functions.json")
-	defaults := convertTimeEncodings(t, fx.Defaults).(map[string]any)
+	defaults, ok := convertTimeEncodings(t, fx.Defaults).(map[string]any)
+	if !ok {
+		t.Fatalf("expected defaults map")
+	}
 
 	for _, factory := range evaluatorFactories {
-		factory := factory
 		t.Run(factory.name, func(t *testing.T) {
 			skipJSTestsWhenUnavailable(t, factory.name)
 			registry := NewFunctionRegistry()
@@ -907,8 +906,14 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 				if len(args) != 2 {
 					return nil, fmt.Errorf("equalsIgnoreCase expects 2 args")
 				}
-				a, _ := args[0].(string)
-				b, _ := args[1].(string)
+				a, ok := args[0].(string)
+				if !ok {
+					return nil, fmt.Errorf("equalsIgnoreCase expects string arg 1")
+				}
+				b, ok := args[1].(string)
+				if !ok {
+					return nil, fmt.Errorf("equalsIgnoreCase expects string arg 2")
+				}
 				return strings.EqualFold(a, b), nil
 			}); err != nil {
 				t.Fatalf("register equalsIgnoreCase: %v", err)
@@ -935,7 +940,6 @@ func TestCustomFunctionsAcrossEvaluators(t *testing.T) {
 			}
 
 			for _, tc := range fx.Cases {
-				tc := tc
 				t.Run(tc.Name, func(t *testing.T) {
 					input := convertTimeEncodings(t, tc.Input)
 					var inputMap map[string]any
@@ -1085,8 +1089,8 @@ func convertTimeEncodings(t *testing.T, value any) any {
 		return out
 	case string:
 		const prefix = "time:"
-		if strings.HasPrefix(v, prefix) {
-			ts, err := time.Parse(time.RFC3339, strings.TrimPrefix(v, prefix))
+		if after, ok := strings.CutPrefix(v, prefix); ok {
+			ts, err := time.Parse(time.RFC3339, after)
 			if err != nil {
 				t.Fatalf("invalid time encoding %q: %v", v, err)
 			}
