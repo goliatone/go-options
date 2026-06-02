@@ -7,7 +7,7 @@ import (
 
 func BenchmarkResolveWithTrace(b *testing.B) {
 	layers := make([]Layer[traceSnapshot], 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		name := fmt.Sprintf("layer_%d", i)
 		layers[i] = NewLayer(
 			NewScope(name, 100-i),

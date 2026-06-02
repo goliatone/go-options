@@ -11,10 +11,6 @@ type sampleSnapshot struct {
 	Labels map[string]string
 }
 
-func intPtr(v int) *int {
-	return &v
-}
-
 func TestNewScopeCopiesMetadata(t *testing.T) {
 	meta := map[string]any{"owner": "system"}
 	scope := NewScope("system", 50,
@@ -35,7 +31,7 @@ func TestNewScopeCopiesMetadata(t *testing.T) {
 func TestNewLayerClonesSnapshot(t *testing.T) {
 	snapshot := sampleSnapshot{
 		Name:  "default",
-		Count: intPtr(5),
+		Count: new(5),
 		Labels: map[string]string{
 			"env": "prod",
 		},
@@ -88,14 +84,14 @@ func TestNewStackOrdersAndValidates(t *testing.T) {
 func TestStackMergeStructSnapshots(t *testing.T) {
 	defaults := NewLayer(NewScope("defaults", 100), sampleSnapshot{
 		Name:  "defaults",
-		Count: intPtr(3),
+		Count: new(3),
 		Labels: map[string]string{
 			"env": "prod",
 		},
 	})
 	group := NewLayer(NewScope("group", 200), sampleSnapshot{
 		Name:  "group",
-		Count: intPtr(7),
+		Count: new(7),
 	})
 	user := NewLayer(NewScope("user", 300), sampleSnapshot{
 		Name: "user",

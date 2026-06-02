@@ -1,0 +1,122 @@
+* errcheck: 38
+* funlen: 1
+* gocyclo: 5
+* govet: 2
+* nestif: 1
+* staticcheck: 3
+* tagliatelle: 3
+* unused: 3
+56 issues:
+MaxRetries int    `json:"maxRetries" default:"3" minimum:"0" maximum:"10" formgen:"hint=Automatic retry attempts"`
+ReadTimeout  int    `json:"readTimeout" default:"30" minimum:"0" formgen:"hint=Seconds until read timeout"`
+WriteTimeout int    `json:"writeTimeout" default:"30" minimum:"0"`
+^
+_ = hook.Notify(context.Background(), activity.Event{})
+_ = optsWrapper.ActivityHooks().Notify(context.Background(), event)
+capture := hooks[0].(*CaptureHook)
+content, _ := requestBody["content"].(map[string]any)
+credentials := props["credentials"].(map[string]any)
+debug, _ := merged.Get("debug")
+defaultEvaluator := NewExprEvaluator(exprOpts...)
+deps := props["dependencies"].(map[string]any)
+endpoint, _ := dynamicWrapper.Get("api.endpoint")
+enum := port["enum"].([]any)
+err := hooks.Notify(nil, Event{Verb: "update", ObjectType: "option", ObjectID: "1"})
+evaluate.go:83:22: SA4023(related information): the lhs of the comparison is the 1st return value of this function call (staticcheck)
+evaluate.go:84:5: SA4023: this comparison is never true (staticcheck)
+examples/activity/main.go:49:2: Error return value of `(github.com/goliatone/go-options/pkg/activity.Hooks).Notify` is not checked (errcheck)
+examples/options/main.go:127:11: Error return value of `merged.Get` is not checked (errcheck)
+examples/options/main.go:128:11: Error return value of `merged.Get` is not checked (errcheck)
+examples/options/main.go:129:9: Error return value of `merged.Get` is not checked (errcheck)
+examples/options/main.go:178:12: Error return value of `dynamicWrapper.Get` is not checked (errcheck)
+examples/options/main.go:179:11: Error return value of `dynamicWrapper.Get` is not checked (errcheck)
+examples/options/main.go:17:22: json(snake): got 'readTimeout' want 'read_timeout' (tagliatelle)
+examples/options/main.go:187:11: Error return value of `dynamicWrapper.Get` is not checked (errcheck)
+examples/options/main.go:18:22: json(snake): got 'writeTimeout' want 'write_timeout' (tagliatelle)
+examples/options/main.go:208:14: Error return value of `validWrapper.Get` is not checked (errcheck)
+examples/options/main.go:46:20: json(snake): got 'maxRetries' want 'max_retries' (tagliatelle)
+examples/options/main.go:66:6: Function 'main' has too many statements (66 > 45) (funlen)
+examples/scope/main.go:89:11: Error return value of `json.MarshalIndent` is not checked (errcheck)
+formgen := host["x-formgen"].(map[string]any)
+func (b *openAPIDocumentBuilder) schemaFor(node *schemaNode, nameHint string) map[string]any {
+func (d *Decoder[T]) Decode(ctx Context, payload map[string]any) (T, error) {
+func (f compileOptionFunc) applyCompileOption(cfg *compileConfig) {
+func (o *Options[T]) evaluatorOrDefault(defaultEvaluator Evaluator) Evaluator {
+func cloneValue(v reflect.Value) reflect.Value {
+func main() {
+func mergeValue(strong, weak reflect.Value) reflect.Value {
+func validateDocument(document map[string]any) error {
+host := props["host"].(map[string]any)
+if d.custom != nil {
+if defaultEvaluator == nil {
+if host["minLength"].(int) != 3 {
+if port["maximum"].(float64) != 65535 {
+if port["minimum"].(float64) != 1 {
+if title, _ := info["title"].(string); title == "" {
+if version, _ := info["version"].(string); version == "" {
+info, _ := document["info"].(map[string]any)
+internal/hydrate/decoder.go:110:9: shadow: declaration of "err" shadows declaration at line 101 (govet)
+internal/hydrate/decoder.go:120:1: `if d.custom != nil` has complex nested blocks (complexity: 5) (nestif)
+internal/hydrate/decoder.go:94:1: cyclomatic complexity 16 of func `(*Decoder).Decode` is high (> 15) (gocyclo)
+items := deps["items"].(map[string]any)
+layering/merge.go:125:1: cyclomatic complexity 18 of func `cloneValue` is high (> 15) (gocyclo)
+layering/merge.go:198:11: Error return value is not checked (errcheck)
+layering/merge.go:204:10: Error return value is not checked (errcheck)
+layering/merge.go:206:9: Error return value is not checked (errcheck)
+layering/merge.go:26:10: Error return value is not checked (errcheck)
+layering/merge.go:28:9: Error return value is not checked (errcheck)
+layering/merge.go:31:1: cyclomatic complexity 33 of func `mergeValue` is high (> 15) (gocyclo)
+mode := props["mode"].(map[string]any)
+next, err := hook(ctx, current)
+openapi, _ := document["openapi"].(string)
+operation, _ := operationValue.(map[string]any)
+pathItem, _ := pathValue.(map[string]any)
+paths, _ := document["paths"].(map[string]any)
+payload, _ := json.MarshalIndent(trace, "  ", "  ")
+pkg/activity/hooks_test.go:56:13: Error return value is not checked (errcheck)
+pkg/activity/hooks_test.go:80:22: SA1012: do not pass a nil Context, even if a function permits it; pass context.TODO if you are unsure about which Context to use (staticcheck)
+pkg/activity/usersink/hook_test.go:92:2: Error return value of `hook.Notify` is not checked (errcheck)
+pkg/state/resolver_contract_test.go:81:19: shadow: declaration of "err" shadows declaration at line 75 (govet)
+port := props["port"].(map[string]any)
+props := schema["properties"].(map[string]any)
+relationships := mode["x-relationships"].(map[string]any)
+requestBody, _ := operation["requestBody"].(map[string]any)
+result, _ := cloned.Interface().(T)
+retries, _ := merged.Get("retries")
+return cloned.Interface().(T)
+return holder.Interface().(T)
+return merged.Interface().(T)
+return result.Interface().(T)
+schema/openapi/document.go:138:1: cyclomatic complexity 16 of func `(*openAPIDocumentBuilder).schemaFor` is high (> 15) (gocyclo)
+schema/openapi/document.go:236:1: cyclomatic complexity 16 of func `validateDocument` is high (> 15) (gocyclo)
+schema/openapi/document.go:240:11: Error return value is not checked (errcheck)
+schema/openapi/document.go:244:8: Error return value is not checked (errcheck)
+schema/openapi/document.go:248:12: Error return value is not checked (errcheck)
+schema/openapi/document.go:251:14: Error return value is not checked (errcheck)
+schema/openapi/document.go:254:9: Error return value is not checked (errcheck)
+schema/openapi/document.go:259:13: Error return value is not checked (errcheck)
+schema/openapi/document.go:267:15: Error return value is not checked (errcheck)
+schema/openapi/document.go:274:17: Error return value is not checked (errcheck)
+schema/openapi/document.go:278:13: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:40:11: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:41:10: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:45:5: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:48:13: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:56:10: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:57:5: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:60:5: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:66:10: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:71:10: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:72:19: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:80:17: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:84:10: Error return value is not checked (errcheck)
+schema/openapi/graph_test.go:85:11: Error return value is not checked (errcheck)
+serverPort, _ := validWrapper.Get("Port")
+timeout, _ := merged.Get("timeout")
+timeout, _ = dynamicWrapper.Get("api.timeout")
+type compileOptionFunc func(*compileConfig)
+types.go:138:6: type compileOptionFunc is unused (unused)
+types.go:140:28: func compileOptionFunc.applyCompileOption is unused (unused)
+types.go:177:22: func (*Options[T]).evaluatorOrDefault is unused (unused)
+value, trace, err := options.ResolveWithTrace(assertion.Path)
+version, _ := dynamicWrapper.Get("api.version")

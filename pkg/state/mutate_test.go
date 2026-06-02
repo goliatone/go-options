@@ -3,6 +3,7 @@ package state_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	opts "github.com/goliatone/go-options"
@@ -15,12 +16,12 @@ type mutateStore[T any] struct {
 	loadOK       bool
 	loadErr      error
 
-	saveCalls   int
-	savedRef    state.Ref
-	savedMeta   state.Meta
-	savedValue  T
-	saveReturn  state.Meta
-	saveErr     error
+	saveCalls  int
+	savedRef   state.Ref
+	savedMeta  state.Meta
+	savedValue T
+	saveReturn state.Meta
+	saveErr    error
 }
 
 func (s *mutateStore[T]) Load(_ context.Context, ref state.Ref) (T, state.Meta, bool, error) {
@@ -98,7 +99,14 @@ func TestResolverMutatePropagatesMetaAndSnapshotID(t *testing.T) {
 	}
 
 	options, gotMeta, err := resolver.Mutate(context.Background(), ref, state.Meta{ETag: "v1"}, func(v *map[string]any) error {
-		email := (*v)["notifications"].(map[string]any)["email"].(map[string]any)
+		notifications, ok := (*v)["notifications"].(map[string]any)
+		if !ok {
+			return fmt.Errorf("expected notifications map")
+		}
+		email, ok := notifications["email"].(map[string]any)
+		if !ok {
+			return fmt.Errorf("expected email map")
+		}
 		email["enabled"] = true
 		return nil
 	})
@@ -165,4 +173,3 @@ func TestResolverMutateETagMismatch(t *testing.T) {
 		t.Fatalf("expected no save calls, got %d", store.saveCalls)
 	}
 }
-

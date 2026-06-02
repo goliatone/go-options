@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"maps"
 	"sync"
 )
 
@@ -56,9 +57,6 @@ func cloneMeta(meta Meta) Meta {
 		return out
 	}
 	out.Extra = make(map[string]string, len(meta.Extra))
-	for k, v := range meta.Extra {
-		out.Extra[k] = v
-	}
+	maps.Copy(out.Extra, meta.Extra)
 	return out
 }
-

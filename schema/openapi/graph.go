@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
 	"sort"
 	"strconv"
@@ -184,6 +185,7 @@ func buildSchemaGraph(value any) (*schemaNode, error) {
 	return node, nil
 }
 
+//nolint:gocyclo // Schema reflection needs to handle pointers, interfaces, primitives, structs, maps, slices, and recursion together.
 func (b *schemaBuilder) build(rv reflect.Value, rt reflect.Type) (*schemaNode, error) {
 	if rt == nil {
 		if rv.IsValid() {
@@ -211,7 +213,7 @@ func (b *schemaBuilder) build(rv reflect.Value, rt reflect.Type) (*schemaNode, e
 		return newObjectNode(), nil
 	}
 
-	if rt == reflect.TypeOf(time.Time{}) {
+	if rt == reflect.TypeFor[time.Time]() {
 		return &schemaNode{
 			Type:   "string",
 			Format: "date-time",
@@ -421,9 +423,7 @@ func applyFieldMetadata(node *schemaNode, field reflect.StructField) error {
 		values := parseKeyValueTag(tag)
 		if len(values) > 0 {
 			formgen := node.ensureFormgen()
-			for key, value := range values {
-				formgen[key] = value
-			}
+			maps.Copy(formgen, values)
 		}
 	}
 
@@ -431,9 +431,7 @@ func applyFieldMetadata(node *schemaNode, field reflect.StructField) error {
 		values := parseKeyValueTag(tag)
 		if len(values) > 0 {
 			meta := node.ensureRelationships()
-			for key, value := range values {
-				meta[key] = value
-			}
+			maps.Copy(meta, values)
 		}
 	}
 
@@ -556,7 +554,7 @@ func parseKeyValueTag(raw string) map[string]string {
 		return nil
 	}
 	values := map[string]string{}
-	for _, part := range strings.Split(raw, ",") {
+	for part := range strings.SplitSeq(raw, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue

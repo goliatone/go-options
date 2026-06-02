@@ -23,7 +23,7 @@ type Ref struct {
 type Meta struct {
 	SnapshotID string            `json:"snapshot_id,omitempty"`
 	ETag       string            `json:"etag,omitempty"`
-	UpdatedAt  time.Time         `json:"updated_at,omitempty"`
+	UpdatedAt  time.Time         `json:"updated_at"`
 	Extra      map[string]string `json:"extra,omitempty"`
 }
 
@@ -179,12 +179,12 @@ func (r Resolver[T]) Mutate(ctx context.Context, ref Ref, meta Meta, fn Mutator[
 		return nil, loadedMeta, fmt.Errorf("%w: expected %q, got %q", ErrETagMismatch, meta.ETag, loadedMeta.ETag)
 	}
 
-	if err := fn(&snapshot); err != nil {
-		return nil, loadedMeta, err
+	if mutateErr := fn(&snapshot); mutateErr != nil {
+		return nil, loadedMeta, mutateErr
 	}
 
-	if _, err := opts.Load(snapshot); err != nil {
-		return nil, loadedMeta, err
+	if _, loadErr := opts.Load(snapshot); loadErr != nil {
+		return nil, loadedMeta, loadErr
 	}
 
 	saveMeta := mergeMeta(loadedMeta, meta)

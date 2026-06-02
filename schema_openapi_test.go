@@ -26,17 +26,17 @@ func TestOpenAPIGeneratorIntegration(t *testing.T) {
 		t.Fatalf("expected schema map, got %T", doc.Document)
 	}
 
-	if version, _ := schema["openapi"].(string); version == "" {
+	if version, versionOK := schema["openapi"].(string); !versionOK || version == "" {
 		t.Fatalf("expected openapi version string, got %v", schema["openapi"])
 	}
 	info, ok := schema["info"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected info section, got %T", schema["info"])
 	}
-	if title, _ := info["title"].(string); title == "" {
+	if title, titleOK := info["title"].(string); !titleOK || title == "" {
 		t.Fatalf("expected info.title value, got %v", info["title"])
 	}
-	if schemaVersion, _ := info["version"].(string); schemaVersion == "" {
+	if schemaVersion, schemaVersionOK := info["version"].(string); !schemaVersionOK || schemaVersion == "" {
 		t.Fatalf("expected info.version value, got %v", info["version"])
 	}
 
@@ -56,7 +56,7 @@ func TestOpenAPIGeneratorIntegration(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected requestBody map, got %T", operation["requestBody"])
 	}
-	if required, _ := requestBody["required"].(bool); !required {
+	if required, requiredOK := requestBody["required"].(bool); !requiredOK || !required {
 		t.Fatalf("expected requestBody.required to be true, got %v", requestBody["required"])
 	}
 	content, ok := requestBody["content"].(map[string]any)
@@ -102,7 +102,7 @@ func TestOpenAPIGeneratorNilValue(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected schema map, got %T", doc.Document)
 	}
-	if version, _ := payload["openapi"].(string); version == "" {
+	if version, versionOK := payload["openapi"].(string); !versionOK || version == "" {
 		t.Fatalf("expected openapi version, got %v", payload["openapi"])
 	}
 	paths, ok := payload["paths"].(map[string]any)
@@ -120,7 +120,7 @@ func TestOpenAPIGeneratorConcurrentSchema(t *testing.T) {
 	const goroutines = 16
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
-	for i := 0; i < goroutines; i++ {
+	for range goroutines {
 		go func() {
 			defer wg.Done()
 			doc, err := wrapper.Schema()

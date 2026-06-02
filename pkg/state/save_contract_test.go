@@ -14,8 +14,8 @@ type saveFixture struct {
 }
 
 type saveCase struct {
-	Name   string `json:"name"`
-	Ref    struct {
+	Name string `json:"name"`
+	Ref  struct {
 		Domain string       `json:"domain"`
 		Scope  fixtureScope `json:"scope"`
 	} `json:"ref"`
@@ -84,4 +84,3 @@ func cmpJSON(want, got any) string {
 	}
 	return "want=" + string(wantRaw) + " got=" + string(gotRaw)
 }
-

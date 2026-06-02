@@ -3,6 +3,7 @@ package opts
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"sort"
 
 	layering "github.com/goliatone/go-options/layering"
@@ -138,15 +139,15 @@ func NewStack[T any](layers ...Layer[T]) (*Stack[T], error) {
 	seenNames := make(map[string]struct{}, len(layers))
 	copied := make([]Layer[T], len(layers))
 	for i, layer := range layers {
-		layer := cloneLayer(layer)
-		if layer.Scope.Name == "" {
+		clonedLayer := cloneLayer(layer)
+		if clonedLayer.Scope.Name == "" {
 			return nil, ErrScopeNameRequired
 		}
-		if _, ok := seenNames[layer.Scope.Name]; ok {
-			return nil, fmt.Errorf("%w: %s", ErrDuplicateScopeName, layer.Scope.Name)
+		if _, ok := seenNames[clonedLayer.Scope.Name]; ok {
+			return nil, fmt.Errorf("%w: %s", ErrDuplicateScopeName, clonedLayer.Scope.Name)
 		}
-		seenNames[layer.Scope.Name] = struct{}{}
-		copied[i] = layer
+		seenNames[clonedLayer.Scope.Name] = struct{}{}
+		copied[i] = clonedLayer
 	}
 
 	sort.Slice(copied, func(i, j int) bool {
@@ -228,8 +229,6 @@ func copyMetadata(origin map[string]any) map[string]any {
 		return nil
 	}
 	out := make(map[string]any, len(origin))
-	for key, value := range origin {
-		out[key] = value
-	}
+	maps.Copy(out, origin)
 	return out
 }

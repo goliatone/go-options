@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -74,9 +75,7 @@ func asStringAnyMap(in map[string]any) map[string]any {
 		return nil
 	}
 	out := make(map[string]any, len(in))
-	for k, v := range in {
-		out[k] = v
-	}
+	maps.Copy(out, in)
 	return out
 }
 

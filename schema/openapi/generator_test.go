@@ -73,7 +73,6 @@ func TestGeneratorFixtures(t *testing.T) {
 	}
 
 	for _, name := range cases {
-		name := name
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -137,7 +136,7 @@ func TestGeneratorConcurrentAccess(t *testing.T) {
 	const goroutines = 16
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
-	for i := 0; i < goroutines; i++ {
+	for range goroutines {
 		go func() {
 			defer wg.Done()
 			doc, err := generator.Generate(input)

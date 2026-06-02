@@ -47,9 +47,9 @@ func TestResolverResolveWithDefaultsContracts(t *testing.T) {
 			}
 
 			for _, assertion := range tc.Resolve {
-				value, trace, err := options.ResolveWithTrace(assertion.Path)
-				if err != nil {
-					t.Fatalf("trace %q: %v", assertion.Path, err)
+				value, trace, traceErr := options.ResolveWithTrace(assertion.Path)
+				if traceErr != nil {
+					t.Fatalf("trace %q: %v", assertion.Path, traceErr)
 				}
 				if value != assertion.Expect.Value {
 					t.Fatalf("path %q expected value %v, got %v", assertion.Path, assertion.Expect.Value, value)
@@ -84,4 +84,3 @@ func TestResolverResolveWithDefaultsContracts(t *testing.T) {
 		})
 	}
 }
-
